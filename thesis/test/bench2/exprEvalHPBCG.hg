@@ -1,0 +1,168 @@
+
+#cpu x86
+
+int     exprTerminal(char **expr, map_t values, insn **rcode)
+{
+        int     val;
+        char    *str = *expr;
+        char    buf[32];
+        int     n;
+        insn    *code = *rcode;
+        if (sscanf(str, "%[0-9]%n", buf, &n)) 
+        {
+                val = strtol(buf, 0, 0);
+                #[
+                        .org code
+                        mov $(val), %eax
+                        push %eax
+                ]#;
+                *rcode = hpbcg_asm_pc;
+                str += n;
+                printf("literal :%s[%d] = %d\n", buf, n, val);
+                goto good;
+        }
+        else if (sscanf(str, "%[a-zA-Z]%n", buf, &n))
+        {
+                val = getVal(values, buf);
+                #[
+                        .org code
+                        mov $(val), %eax
+                        push %eax
+                ]#;
+                *rcode = hpbcg_asm_pc;
+                str += n;
+                printf("VARIABLE :%s[%d] = %d\n", buf, n, val);
+                goto good;
+        }
+        return 0;
+
+good:
+        *expr = str;
+        return 1;
+}
+
+int     exprChar(char **expr, char c)
+{
+        if (**expr == c)
+        {       
+                ++*expr;
+                return 1;
+        }
+        return 0;
+}
+
+
+int     exprEvalH(char **expr, map_t values, insn **rcode)
+{
+        if (exprTerminal(expr, values, rcode))
+        {
+                while (exprChar(expr, '*') && exprTerminal(expr, values, rcode) && 
+                                ({
+                                        insn    *code = *rcode;
+                                        #[
+                                                .org code
+                                                pop %ebx
+                                                pop %eax
+                                                imul %ebx,%eax
+                                                push %eax
+                                        ]#;
+                                        *rcode = hpbcg_asm_pc;
+                                        1;
+                                })
+                       || exprChar(expr, '/') && exprEvalH(expr, values, rcode) && 
+                                ({
+                                        insn    *code = *rcode;
+                                        #[
+                                                .org code
+                                                pop %ebx
+                                                pop %eax
+                                                idiv %ebx
+                                                push %eax
+                                        ]#;
+                                        *rcode = hpbcg_asm_pc;
+                                        1;
+                                })
+                       || exprChar(expr, '%') && exprEvalH(expr, values, rcode) && 
+                                ({
+                                        insn    *code = *rcode;
+                                        #[
+                                                .org code
+                                                pop %ebx
+                                                pop %eax
+                                                idiv %ebx
+                                                push %edx
+                                        ]#;
+                                        *rcode = hpbcg_asm_pc;
+                                        1;
+                                })
+                       );
+                return 1;
+        }
+        return 0;
+}
+
+int     exprEval(char **expr, map_t  values, int *res)
+{
+        if (!*expr)
+        {       
+                printf("bad expr pointer\n");
+                abort();
+        }
+
+        insn *code= (insn *)malloc(1024);
+        insn *refcode = code;
+        #[
+                .org	code
+                push	%ebp
+                mov	%esp, %ebp
+        ]#;
+        code = hpbcg_asm_pc;
+        
+        if (exprEvalH(expr, values, &code))
+        {
+                while (exprChar(expr, '+') && exprEvalH(expr, values, &code) && 
+                                ({
+                                        #[
+                                                .org code
+                                                pop %ebx
+                                                pop %eax
+                                                add %ebx,%eax
+                                                push %eax
+                                        ]#;
+                                        code = hpbcg_asm_pc;
+                                        1;
+                                 })
+                       || exprChar(expr, '-') && exprEvalH(expr, values, &code) && 
+                                ({
+                                        #[
+                                                .org code
+                                                pop %ebx
+                                                pop %eax
+                                                sub %ebx,%eax
+                                                push %eax
+                                        ]#;
+                                        code = hpbcg_asm_pc;
+                                        1;
+                                 })
+                       );
+                #[
+                        pop %eax
+                        leave
+                        ret
+                ]#;
+                iflush (refcode, hpbcg_asm_pc);
+                FILE    *debug = fopen("out_exprEvalHPBCG.txt", "w+");
+                for (int i = 0; i < (hpbcg_asm_pc - refcode); ++i)
+                {
+                        fprintf(debug, "0x%X ", refcode[i]);
+                }
+                fprintf(debug, "\n");
+                fclose(debug);
+
+                typedef int (*func)();
+                func    compu = (func) refcode;
+                *res = compu();
+                return 1;
+        }
+        return 0;
+}

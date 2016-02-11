@@ -1,0 +1,95 @@
+Here some reflexion about syntax.
+
+1) we want:
+        * horizontal layout a la python whithout \t
+        * no declaration/definition distinction => prototype based
+        * scope are used in typing
+
+                // type deduce by value. first affectation in CFG == declaration
+                a = 0 
+
+                // as F# all literal have a specific type with suffix
+                b = 0xFFy        // byte
+                c = 0xFFFFs      // short
+                d = 0xFFFFFFFFl  // long
+                e = 0xFFFFFFFFFFFFFFFFll
+                
+                // fix size array of type initialized
+                ary = void to *[20] byte
+                ary2 = &{0y, 0y, 0y, 0y}
+                ary3 = &{[0..20] = 0y}
+
+                // fix size vector of vectorized instruction
+                vec = {0.0}<30> float
+
+                // for struct, aliasing with could create type
+                size_t = @type uint
+                point = @type:
+                        x = 0.0
+                        y = 0.0
+
+                // size of array must be value or contextual evaluable expr (in a local scope, call scope, type scope, or inside scope)
+                // for example, in inside scope _ represent one item of the array, so:
+                cstring = @type [?_!=0] byte
+                pstring = @type:
+                        size = 0y
+                        str = [size] byte
+
+                // for pointer/reference
+                myTata = @unsafe null to *[?_!=0]*[?_!=0]  // the char **argv is structured like this
+                List = @type :
+                        value = null to *[?_!=0]byte
+                        next = null to *List
+
+                // usually we create a reference by construction
+                nia = 0 // type int
+                plop = &nia // type *int
+
+                // by default value are not mutable/immutable ... we want to know WHEN is 
+
+
+                // default value imposed for type allow automatic type constructor
+                students = List
+                // List is also a function used for construction with name param or not
+                item = List("nia", null)
+                item2 = List(next=&item, "plop")
+
+                // and for none initialized value
+                data = @unsafe void to *List // very unsafe 
+
+                // and for function
+                main=@func ():
+                        cout << "entry point"
+                // mandatory parameter 
+                func1=@func (a = void to int) int:
+                        return a + 42
+                func1 // fail
+                func1() // fail
+                func1(42) // ok
+                func1(a=42) // ok
+                // function with default value
+                func1=@func (a = 12, b = 13) int:
+                        return a * b + b ** a
+                func1 // ok
+                func1() // ok
+                func1(33) // ok
+                func1(21, 23) //ok
+                // function with mandatory parameter name and default value
+                max=@func (a = void to int, b = -2 to int) int :
+                        return (a if (a > b) || b) // no ternary operator but equivalent
+                max // fail
+                max(12) // ok return 12
+                max(12, 14) // ok return 14
+                max(b=3,12) // ok return 12, positionnal parameter are take thru name parameter
+                // function are type contextual for array
+                dumpThis=(data = void to *[size] byte, size = 0):
+                        data.each -> x :
+                                putc(x)
+                
+        * decorator/attribute for features
+        * strong typing with evaluable/compilable distinction:
+                all in global scope is evaluated, the resultant and exported symbol is compiled
+                @evaluable attribute is used to mark evaluable part
+                @compilable attribute is used to mark compilable part
+                transitivity of attribute is used to resolve cf (vieille idee pure/impure)
+

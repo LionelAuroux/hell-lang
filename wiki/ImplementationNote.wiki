@@ -1,0 +1,40 @@
+= Basics idea that leads the implementation. =
+
+The main concept is to develop lazily the language. I need to use massively tools and technics to start the specific code as soon as possible.
+So, produce less code for more result.
+
+I decided to use codeworker for the frontend and llvm for the backend.
+
+== But how to be laziest. ==
+
+I need self-hosting soon as possible to write the Hell's compiler in Hell (to be metacircular).
+
+I also need to develop with the same side effects that the language allows.
+Hell supports partial evaluation during static compilation. So, using Just In Time compilation or llvm's interpretation is required in the self-hosted compiler.
+
+== Is it possible? ==
+
+With codeworker I can easily define, implement the language, and produce a llvm code.
+But important part of the compiler must be implemented in Hell to avoid double implementation.
+
+So interaction between codeworker and Hell's part could be a deadend.
+Codeworker is interpretated and allows extensions thru C++ interface.
+Make a C++ compatible interface written in Hell is a bad idea.
+Hell is a system language, designed to develop part of kernel. C compatible ABI and no runtime is the goal. This adds unecessary complications. 
+
+Another deadend is to produce LLVM code wich prevents to use the JIT when we need it.
+Also, we need to preserve same side effects that the final compiler.
+
+== The correct viewpoint. ==
+
+At the end, the compiler should use LLVM thru his C++ API to produce native code or, to dynamically execute parts of code (with the JIT feature or the interpreter if not allowed by the architecture).
+
+So the codeworker frontend must produce a C++ code that use the API and this code will call the correct LLVM's functions as the final compiler will do.
+
+This adds a step in the processes.
+
+This traduction could be naive without optimization, and this C++ could use external functions from others translation units previously translated. And these external functions could be written in Hell.
+
+As we generate C++ code that generate the final code, we could treated the AST directly in C++. So we could generate C++ code that call AST node creation during the translation.
+
+We need a minimal library for node manipulations written in C++. This library could be used to translate basic Hell code. This code could be replace and extend this library.

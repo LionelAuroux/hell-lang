@@ -1,0 +1,343 @@
+/*
+  proto grammar de HELL
+*/
+
+#include "astnode.inc.cws"
+
+#ignore["Hell"] ::=
+[
+	['#' -> [['\r']? '\n']]
+	| ["//" -> [['\r']? '\n']]
+	| ["/*" -> "*/"]
+	| ' ' | '\t' | '\r' | '\n'
+]+
+;
+
+#ignore["HellOneLine"] ::=
+[
+	["/*" -> "*/"]
+	| ' ' | '\t'
+]+
+;
+
+// racine de HELL
+Hell ::= #ignore("Hell")
+	=> this = this.name;
+	=> insert this.gl_pctx;
+	=> astNode_Block(this);
+	=> ref this.gl_pctx = this.block;
+	=> astNode_setDefaultTypes(this.block);
+	[ #pushItem(this.block)
+	 => traceLine("expr");
+	expr(this.block#back)
+	]+
+	#continue 
+	#empty
+;
+
+///// TODO : a deplacer
+
+attributes(theBlock : node) ::=
+  [#!ignore '@' #readIdentifier:idAttr => traceLine("attr:"+idAttr);]
+  ['(' #insert(theBlock.params) call_parameter(theBlock) ')']?
+;
+
+// passage de parametre , as Type ou to Type (conversion explicite)
+mode_param(theBlock : node) ::= [":"|#readIdentifier:{"to"}]:theBlock.mode
+;
+
+// pas + d'un niveau de pointer :P
+pointer ::= '*'
+;
+
+// type parametrise, cad dependant d'un autre type
+parameterize_type(theType : node) ::=
+	[#insert(theType.pointer) pointer:theType.pointer]?
+	identifier(theType)
+	=> theType.type_hell = theType.id;
+	[#insert(theType.of_type) #readIdentifier:{"of"} #continue type_identifier(theType.of_type) ]?
+;
+
+// definition d'un type
+type_identifier(theBlock : node) ::=
+[
+	parameterize_type(theBlock)
+	| '(' 
+		#insert(theBlock.Tuple) 
+		#pushItem(theBlock.Tuple)
+		parameterize_type(theBlock.Tuple#back) 
+		[',' #continue #pushItem(theBlock.Tuple) parameterize_type(theBlock.Tuple#back) ]+ 
+	   ')'
+]
+;
+
+list_params(theBlock : node) ::= 
+	[
+		#pushItem(theBlock.params)
+		param(theBlock.params#back) 
+		[
+		 ',' #pushItem(theBlock.params) param(theBlock.params#back)
+		]* 
+		["," "..." #pushItem(theBlock.params) => insert theBlock.params#back.type = "Tuple"; ]?
+	]?
+;
+
+// liste de parametres de declaration
+params(theBlock : node) ::=  '(' list_params(theBlock) ')' [#insert(theBlock.type) type_identifier(theBlock.type)]?
+  => insert this.gl_pctx.symbol[theBlock.id];
+  => ref this.gl_pctx.symbol[theBlock.id] = theBlock;	      
+;
+
+// un parametre
+param(theBlock : node) ::= 
+	[identifier(theBlock) mode_param(theBlock)]?
+	type_identifier(theBlock)
+	// valeur par defaut
+	['=' expr(theBlock) ]?
+;
+
+// PRIORITE DES OPERATORS A REVOIR
+
+type_op ::= ':' [#!ignore !'=']
+;
+
+ass_op ::= 
+  ":=" | '=' [#!ignore !'='] /* pas == */ | "*=" | "/=" | "%=" | "+=" | "-=" | "<<=" 
+| ">>=" | "&=" | "^=" | "|=" | "&&=" | "||="
+;
+
+expr(theBlock : node) ::=	
+	unary_expr(theBlock)
+	[
+		ass_op:op
+		#continue	
+		=> astNode_BinOperator(theBlock, op);
+		logical_or_expr(theBlock.right)
+	]*
+;
+
+logical_or_expr(theBlock : node) ::=	
+	logical_and_expr(theBlock) 
+	[
+		"||":op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		logical_and_expr(theBlock.right)
+	]*
+;
+
+logical_and_expr(theBlock : node) ::=	
+	incl_or_expr(theBlock) 
+	[
+		"&&":op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		incl_or_expr(theBlock.right)
+	]*
+;
+
+incl_or_expr(theBlock : node) ::=	
+	excl_or_expr(theBlock) 
+	[
+		["|" [#!ignore] !['!'|"="]]:op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		excl_or_expr(theBlock.right)
+	]*
+;
+
+excl_or_expr(theBlock : node) ::=	
+	and_expr(theBlock) 
+	[
+		["^" [#!ignore] !"="]:op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		and_expr(theBlock.right)
+	]*
+;
+
+and_expr(theBlock : node) ::=	
+	equ_expr(theBlock) 
+	[
+		["&" [#!ignore] !['&'|"="]]:op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		equ_expr(theBlock.right)
+	]*
+;
+
+equ_expr(theBlock : node) ::=	
+	rel_expr(theBlock) 
+	[
+		[["=="|"!="]]:op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		rel_expr(theBlock.right)
+	]*
+;
+
+rel_op ::= "<=" | ">=" | "<"[#!ignore!'<'] | ">"[#!ignore!'>']
+;
+
+rel_expr(theBlock : node) ::=	
+	shift_expr(theBlock) 
+	[
+		rel_op:op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		shift_expr(theBlock.right)
+	]*
+;
+
+shift_expr(theBlock : node) ::=	
+	add_expr(theBlock) 
+	[
+		[["<<"|">>"]]:op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		add_expr(theBlock.right)
+	]*
+;
+
+low_op ::= ['+'[#!ignore!['*'|'=']]|'-'[#!ignore!'-'|'>'|'=']]
+;
+
+add_expr(theBlock : node) ::=	
+	mul_expr(theBlock) 
+	[
+		low_op:op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		mul_expr(theBlock.right)
+	]*
+;
+
+high_op ::= ['*'|'/'|'%'][#!ignore!'=']
+;
+
+
+mul_expr(theBlock : node) ::=
+	unary_expr(theBlock) 
+	[
+		high_op:op
+		#continue
+		=> astNode_BinOperator(theBlock, op);
+		unary_expr(theBlock.right)
+	]*
+;
+
+type_lambda(theBlock : node) ::= '|' list_params(theBlock) '|'
+;
+
+one_line_block(theBlock : node) ::=
+  "->" #ignore("HellOneLine") '{' [#insert(theBlock.lambda) type_lambda(theBlock.lambda) ]?
+  => astNode_Block(theBlock, theBlock#parent);
+  => ref this.gl_pctx = theBlock#parent;
+     [
+      #pushItem(theBlock.block)
+      expr(theBlock.block#back)
+	[ 
+	 #pushItem(theBlock.block)
+	 ';' expr(theBlock.block#back)
+	]*
+     ]?
+    [';']?
+  '}' #ignore("Hell")
+;
+
+multi_line_block(theBlock : node) ::=
+  ':' [#insert(theBlock.lambda) type_lambda(theBlock.lambda)]?
+  => astNode_Block(theBlock, theBlock#parent);
+  => ref this.gl_pctx = theBlock#parent;
+	[ 
+	#pushItem(theBlock.block)
+	 expr(theBlock.block#back)
+	]*
+  #readIdentifier:{"end"}
+;
+
+function_definition(theBlock : node) ::=
+  ':'
+  => astNode_Block(theBlock, theBlock#parent);
+  => ref this.gl_pctx = theBlock#parent;
+	[ 
+	#pushItem(theBlock.block)
+	 expr(theBlock.block#back)
+	]*
+  #readIdentifier:{"end"}
+;
+
+unary_expr(theBlock : node) ::= [#pushItem(theBlock.attributes) attributes(theBlock.attributes)]* evaluable(theBlock)
+[
+ [
+  type_op:op
+  [params(theBlock) | type_identifier(theBlock)] [function_definition(theBlock)]? 
+  => traceObject(theBlock);
+ ]
+|
+ [#check(isFunction(theBlock)) '(' [#insert(theBlock.params) call_parameter(theBlock)]? ')'
+  => theBlock.type_node = "call";
+  => insert theBlock.op = "call";
+ ]
+|
+ [#check(isRange(theBlock)) 
+  [
+   [".." #!ignore !'.' | ">.." | "..<" | ">..<"]:op 
+   => astNode_BinOperator(theBlock, op); 
+   unary_expr(theBlock.right)
+  ]
+ ]
+|
+ [#check(isObject(theBlock)) #insert(theBlock.field)
+  '.' #!ignore !"." unary_expr(theBlock.field)
+ ]
+|
+ [#check(isCollection(theBlock)) #insert(theBlock.index)
+  '[' [unary_expr(theBlock.index)]? ']'
+ ]
+|
+ [#check(isPointer(theBlock)) #insert(theBlock.deref)
+  "->" identifier(theBlock.deref)
+ ]
+| // namespace
+  #pushItem(theBlock.namespace)
+  "::" identifier(theBlock.namespace#back)
+| // cast
+  #pushItem(theBlock.cast_type)
+  #readIdentifier:{"as", "to"} type_identifier(theBlock.cast_type#back)
+]*
+ [
+	#check(takeBlock(theBlock)) #insert(theBlock.block)
+	[ one_line_block(theBlock.block) | multi_line_block(theBlock.block) ]
+ ]?
+;
+
+identifier(theNode : node) ::= #readIdentifier:sId #check(!(sId in {"as", "to", "of"}))
+	=> astNode_Terminal(theNode);
+	=> theNode.type_node = "id";
+	=> insert theNode.id = sId;	
+;
+
+evaluable(theNode : node) ::= 
+  => astNode_Terminal(theNode);
+[
+	identifier(theNode)
+	|[ 
+		#readCString
+		=> insert theNode.type_hell = "string";
+		| #readInteger
+		=> insert theNode.type_hell = "i32";
+		| #readNumeric
+		=> insert theNode.type_hell = "f64";
+	 ]:sConst
+	=> theNode.type_node = "value";
+        => theNode.life_time = "pure";
+	=> insert theNode.value = sConst;
+]
+;
+
+call_parameter(theNode : node) ::= => traceLine("call param");
+	#pushItem(theNode.params)
+	expr(theNode.params#back) [ ',' #continue #pushItem(theNode.params) expr(theNode.params#back) ]*
+;
+

@@ -1,0 +1,350 @@
+<!DOCTYPE HTML PUBLIC "-//SoftQuad//DTD HTML 3.2 + extensions for HoTMetaL PRO 3.0(U) 19961211//EN" "hmpro3.dtd">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+
+<title>Writing Efficient Programs</title></head><body>
+<h1>SUMMARY OF THE RULES</h1>
+<p>The following list restates each rule from Chapters 4 and 5 and then briefly
+summarizes the major points made in the text. A list of the names of the rules
+can be found in Section 7.2 on page 110.</p>
+<h2>SPACE-FOR-TIME RULES</h2>
+<p><b>Space-For-Time Rule 1-Data Structure Augmentation: </b>The time required
+for common operations on data can often be reduced by augmenting the structure
+with extra information or by changing the information within the structure so
+that it can be accessed more easily. (Page 39.)</p>
+<ul>
+<li>Reference counters facilitate garbage collection by keeping additional
+information in dynamically allocated nodes.
+</li>
+<li>Hints augment data structures by keeping a fast but possibly inaccurate
+structure along with a slow but robust structure.
+</li></ul>
+<p><b>Space-For-Time Rule 2-Store Precomputed Results: </b>The cost of
+recomputing an expensive function can be reduced by computing the function only
+once and storing the results.  Subsequent requests for the function are then
+handled by table lookup rather than by computing the function. (Page 40.)</p>
+<ul>
+<li>Peterson stored the value of evaluated board positions to reduce the time
+of a game playing program from 27.10 seconds to 0.18 seconds.
+</li>
+<li>A procedure for computing Fibonacci numbers can be replaced by a table of
+the numbers.
+</li>
+<li>Stu Feldman precomputed the number of ones in all eight-bit strings to
+reduce run time from over a week to less than two hours.
+</li></ul>
+<p><b>Space-For-Time Rule 3-Caching: </b>Data that is accessed most often
+should be the cheapest to access. (Page 42.)</p>
+<ul>
+<li>Jalics found that caching the last element retrieved from a table reduced
+the access cost from 2004 instructions to 4 instructions in 99% of the queries.
+</li>
+<li>Chris Van Wyk's storage allocator cached the most popular kind of node and
+reduced the system run time by over fifty percent; Peter Deutsch cached
+activation records in an allocator and reduced run time by thirty percent.
+</li>
+<li>In implementing a dictionary, keep most of the dictionary on disk but cache
+the most common words in core.
+</li>
+<li>Rick Cattell cached recently-used tuples in a database system to reduce the
+time of an access from 8 milliseconds to 1.4 milliseconds.
+</li>
+<li>Caching can "backfire" and increase the run time of a program if
+locality is not present in the underlying data.
+</li></ul>
+<p><b>Space-For-Time Rule 4-Lazy Evaluation:</b> The strategy of never
+evaluating an item until it is needed avoids evaluations of unnecessary items.
+(Page 43.)</p>
+<ul>
+<li>In building a table of Fibonacci numbers, only compute the numbers actually
+used.
+</li>
+<li>Al Aho evaluated the elements of a table as they were needed and reduced
+the run time of a program from 30 seconds to less than half a second.
+</li>
+<li>Brian Kernighan reduced the run time of a document formatter by twenty
+percent by calculating the width of the current line only as needed rather than
+for every input character.
+</li></ul>
+<h2>TIME-FOR-SPACE RULES</h2>
+<p><b>Time-For-Space Rule 1-Packing: </b>Dense storage representations can
+decrease storage costs by increasing the time required to store and retrieve
+data. (Page 45.)</p>
+<ul>
+<li>Storing integers in one decimal digit per eight-bit byte, two digits per
+byte, and in binary format represent three levels of packing.
+</li>
+<li>The space of a database system could be reduced by one-third by packing
+three integers (between 0 and 1000) in two 16-bit words.
+</li>
+<li>John Laird reduced the time required to read a file of real numbers by a
+factor of over 80 by packing the file.
+</li>
+<li>Stu Feldman found that by <i>unpacking </i>a table he increased the data
+space slightly but decreased the code space by over four thousand words
+</li>
+<li><i>Overlaying </i>reduces data space by storing data items that are never
+simultaneously active in the same memory space.
+</li>
+<li>Code overlaying reduces code space by using the same storage for routines
+that are never simultaneously needed.  Many operating systems provide this
+service automatically in their virtual memory systems.
+</li></ul>
+<p><b>Time-For-Space Rule 2-Interpreters:</b> The space required to represent
+a program can often be decreased by the use of interpreters in which common
+sequences of operations are represented compactly. (Page 47.)</p>
+<ul>
+<li>Finite State Machines (FSM's) can be implemented by small tables; they are
+easy to define, code, prove correct, and maintain.
+</li>
+<li>Brooks describes how an interpreter led to small space requirements for a
+console interpreter, and how the time spent in decoding a dense representation
+of a FORTRAN compiler was paid for by drastically reduced input and output
+costs.
+</li>
+<li>In some systems the programmer should use the interpreter provided by the
+underlying machine architecture and "compile" common operations into
+machine code.
+</li></ul>
+<h2>LOOP RULES</h2>
+<p><b>Loop Rule 1-Code Motion Out of Loops: </b>Instead of performing a
+certain computation in each iteration of a loop, it is better to perform it only
+once, outside the loop. (Page 52.)</p>
+<ul>
+<li>Moving the calculation of a constant factor outside a for loop reduced its
+time from 13.8<i>N</i> microseconds to 7.9<i>N</i> microseconds.
+</li>
+<li>Code cannot be moved out of loops if it has side effects that are desired
+on every iteration.
+</li></ul>
+<p><b>Loop Rule 2-Combining Tests:</b> An efficient inner loop should contain
+as few tests as possible, and preferably only one. The programmer should
+therefore try to simulate some of the exit conditions of the loop by other exit
+conditions. (Page 53.)</p>
+<ul>
+<li>Adding a sentinel in the last element of an unsorted vector reduced the
+time to search it from 7.3<i>C</i> to 4.1<i>C</i> microseconds.
+</li>
+<li>Sentinels can decrease the robustness of a program.  Improper use of a
+sentinel caused a C compiler to generate non-reentrant code; the bug surfaced
+rarely, but was fatal in those circumstances.
+</li>
+<li><i>Sentinels </i>are a common application of Loop Rule 2: we place a
+sentinel at the boundary of a data structure to reduce the cost of testing
+whether our search has exhausted the structure.
+</li>
+<li>Bob Sproull described how the lexical analyzer of the SAIL compiler used a
+control character at the end of the input buffer as a sentinel to avoid testing
+for end-of-buffer on each input character.
+</li>
+<li>Combining tests in the sequential search of a sorted array <i>increased
+</i>the run time from 6.8<i>C </i>microseconds to 7.3<i>C</i> microseconds
+(due to a system-dependent peculiarity); using sentinels finally reduced the
+search time to 4.1<i>C</i> microseconds.
+</li>
+<li>Bob Sproull described how three tests could be combined into one to
+increase the speed of the inner loop of a screen editor.
+</li></ul>
+<p><b>Loop Rule 3-Loop Unrolling: </b>A large cost of some short loops is in
+modifying the loop indices.  That cost can often be reduced by unrolling the
+loop. (Page 56.)</p>
+<ul>
+<li>Unrolling a loop to sum an array of ten real numbers reduced the run time
+from 63.4 microseconds to 22.1 microseconds.
+</li>
+<li>Unrolling the loop of a sequential search reduced its time from 4.1<i>C</i>
+microseconds to 3.4<i>C</i> microseconds.
+</li></ul>
+<p><b>Loop Rule 4-Transfer-Driven Loop Unrolling: </b>If a large cost of an
+inner loop is devoted to trivial assignments, then those assignments can often
+be removed by repeating the code and changing the use of variables.
+Specifically, to remove the assignment I: = J, the subsequent code must treat J
+as though it were I. (Page 59.)</p>
+<ul>
+<li>Unrolling the inner loop of a routine for Fibonacci numbers reduced its
+time from 273 microseconds to 143 microseconds.
+</li>
+<li>Knuth used unrolling to decrease the time of inserting an element into a
+linked list by 16 percent.
+</li></ul>
+<p><b>Loop Rule 5-Unconditional Branch Removal:</b> A fast loop should contain
+no unconditional branches. An unconditional branch at the end of a loop can be
+removed by "rotating" the loop to have a conditional branch at the
+bottom. (Page 62.)</p>
+<ul>
+<li>This technique is applicable only in low-level languages.</li></ul>
+<p><b>Loop Rule 6-Loop Fusion:</b> If two nearby loops operate on the same set
+of elements, then combine their operational parts and use only one set of loop
+control operations. (Page 63.)</p>
+<ul>
+<li>To find the maximum and minimum elements in an array, we make only one
+iterative pass through the array.</li></ul>
+<h2>LOGIC RULES</h2>
+<p><b>Logic Rule 1-Exploit Algebraic Identities:</b> If the evaluation of a
+logical expression is costly, replace it by an algebraically equivalent
+expression that is cheaper to evaluate. (Page 66.)</p>
+<ul>
+<li>Simple optimizations are often done by compilers; programmers must be
+careful that a change of this type does not result in slower code.
+</li>
+<li>An algebraic identity allowed us to remove the square root in Fragment A2
+to yield Fragment A3; this gave a speedup of almost a factor of two.
+</li></ul>
+<p><b>Logic Rule 2-short-circuiting Monotone Functions: </b>If we wish to test
+whether some monotone nondecreasing function of several variables is over a
+certain threshold, then we need not evaluate any of the variables once the
+threshold has been reached. (Page 67.)</p>
+<ul>
+<li>A simple application is evaluating and and or: to evaluate A and B we need
+not test B if A is false.
+</li>
+<li>Short-circuiting the distance evaluation in Fragment A5 reduced the time of
+Fragment A6 by forty percent.
+</li>
+<li>A more complex application of this rule exits from a loop as soon as the
+purpose of the loop has been accomplished.
+</li></ul>
+<p><b>Logic Rule 3-Reordering Tests:</b> Logical tests should be arranged such
+that inexpensive and often successful tests precede expensive and rarely
+successful tests. (Page 69.)</p>
+<ul>
+<li>This was used in testing the character types in a lexical analyzer.
+</li>
+<li>This rule is used to push an expensive test inside a cheaper test.
+</li>
+<li>Peter Weinberger used a single-line test in a Scrabble program that was
+able to avoid an expensive test in over 99% of the cases.
+</li></ul>
+<p><b>Logic Rule 4-Precompute Logical Functions:</b> A logical function over a
+small finite domain can be replaced by a lookup in a table that represents the
+domain. (Page 72.)</p>
+<ul>
+<li>Testing character types in a lexical analyzer is often implemented by a
+table of character types indexed by characters; Brian Kernighan reports that
+this reduced the run time of some programs by thirty to forty percent.
+</li>
+<li>David Moon designed a fast interpreter for a PDP-8 that had one table entry
+for each of the 4096 possible instructions.
+</li></ul>
+<p><b>Logic Rule 5-Boolean Variable Elimination: </b>We can remove boolean
+variables from a program by replacing the assignment to a boolean variable V by
+an if-then-else statement in which one branch represents the case that V is true
+and the other represents the case that V is false. (This generalizes to case
+statements and other logical control structures.) (Page 73.)</p>
+<ul>
+<li>This rule usually decreases time slightly (say, less than 25 percent), but
+greatly increases code space.
+</li>
+<li>More complex applications of this rule remove boolean variables from data
+structures by keeping separate structures for the true and false records.
+</li></ul>
+<h2>PROCEDURE RULES</h2>
+<p><b>Procedure Rule 1-Collapsing Procedure Hierarchies:</b> The run times of
+the elements of a set of procedures that (nonrecursively) call themselves can
+often be reduced by rewriting procedures in line and binding the passed
+variables. (Page 75.)</p>
+<ul>
+<li>Rewriting the distance procedure in line reduced the run time of Fragment
+A4 from 21.2<i>N</i>2 microseconds to 14.0<i>N</i>2 microseconds.
+</li>
+<li>Dennis Ritchie increased the speed of a macro processor by a factor of four
+by writing procedures in line.
+</li></ul>
+<p><b>Procedure Rule 2-Exploit Common Cases:</b> Procedures should be
+organized to handle all cases correctly and common cases efficiently. (Page 76.)</p>
+<ul>
+<li>Mary Shaw used this technique to increase the efficiency of the register
+SAVE and UNSAVE operations on the Rice University Computer; efficiently handling
+the special case of operating on all possible registers reduced the run time of
+some programs by thirty percent.
+</li>
+<li>This rule encourages us to remove unneeded generality from subroutines;
+Chris Van Wyk increased the speed of a program by a factor of three by using a
+special-purpose procedure for intersecting line segments.
+</li>
+<li>We should organize systems so that efficient cases are common cases; by
+ensuring that bit fields always start in the same positions in words, Rob Pike
+increased the efficiency of a raster graphics operation by a factor of two.
+</li></ul>
+<p><b>Procedure Rule 3-Coroutines:</b> A multiple-pass algorithm can often be
+turned into a single-pass algorithm by use of coroutines. (Page 79.)</p>
+<ul>
+<li>An intermediate file that is written sequentially and then read
+sequentially can often be removed by linking together the two programs as
+coroutines; this increases space requirements but reduces costly input/output
+operations.</li></ul>
+<p><b>Procedure Rule 4-Transformations on Recursive Procedures:</b> The run
+time of recursive procedures can often be reduced by applying the following
+transformations: (Page 80.)</p>
+<ul>
+<li>Code the recursion explicitly by use of a program stack.
+</li>
+<li>If the final action of a procedure P is to call itself recursively, replace
+that call by a goto to its first statement; this is usually known as removing
+tail recursion. That goto can often be transformed into a loop.
+</li>
+<li>If a procedure contains only one recursive call on itself, then it is not
+necessary to store the return address on the stack.
+</li>
+<li>It is often more efficient to solve small subproblems by use of an
+auxiliary procedure, rather than by recurring down to problems of size zero or
+one.
+</li></ul>
+<p><b>Procedure Rule 5-Parallelism:</b> A program should be structured to
+exploit as much of the parallelism as possible in the underlying hardware. (Page
+80.)</p>
+<ul>
+<li>Kulsrud, Sedgewick, Smith, and Szymanski used techniques at many design
+levels to build a Quicksort program on a Cray-1 that can sort 800,000 elements
+in less than 1.5 seconds.</li></ul>
+<h2>EXPRESSION RULES</h2>
+<p><b>Expression Rule 1-Compile-Time Initialization: </b>As many variables as
+possible should be initialized before program execution. (Page 82.)</p>
+<ul>
+<li>John Laird preprocessed data unchanged between runs of a program to reduce
+the program's run time from 120 seconds to 4 seconds.</li></ul>
+<p><b>Expression Rule 2-Exploit Algebraic Identities:</b> If the evaluation of
+an expression is costly, replace it by an algebraically equivalent expression
+that is cheaper to evaluate. (Page 82.)</p>
+<ul>
+<li>An algebraic identity yields a fast range test that compiler writers can
+use on two's-complement architectures.
+</li>
+<li>We can often multiply or divide by powers of two by shifting left or right.
+</li>
+<li>Strength reduction on a loop that iterates through the elements of an array
+replaces a multiplication by an addition. This technique generalizes to a large
+class of incremental algorithms.
+</li>
+<li>David Jefferson used an incremental algorithm to reduce the number of
+characters sent to a terminal by a factor of over five.
+</li></ul>
+<p><b>Expression Rule 3-Common Subexpression Elimination:</b> If the same
+expression is evaluated twice with none of its variables altered between
+evaluations, then the second evaluation can be avoided by storing the result of
+the first and using that in place of the second. (Page 84.)</p>
+<ul>
+<li>We cannot eliminate the common evaluation of an expression with important
+side-effects.</li></ul>
+<p><b>Expression Rule 4-Pairing Computation:</b> If two similar expressions
+are frequently evaluated together, then we should make a new procedure that
+evaluates them as a pair. (Page 84.)</p>
+<ul>
+<li>Knuth reported that both the sine and the cosine of a given angle can be
+computed together for 1.5 times the cost of computing either individually.
+Similarly, the maximum and the minimum elements of a vector can be found at
+about 1.5 times the cost of finding either one.</li></ul>
+<p><b>Expression Rule 5-Exploit Word Parallelism:</b> Use the full word width
+of the underlying computer architecture to evaluate expensive expressions. (Page
+85.)</p>
+<ul>
+<li>When we OR two 32-bit sets together giving as output their 32-bit union, we
+are performing 32 operations in parallel.
+</li>
+<li>Stu Feldman's program to count one bits in a word (described in
+Space-For-Time Rule 1) and Peter Weinberger's Scrabble program (described in
+Logic Rule 3) both use this rule.
+</li></ul>
+<p>From <i>Writing Efficient Programs</i> by Jon Bentley; Prentice-Hall 1982
+ISBN 0-13-970244-X</p></body></html>

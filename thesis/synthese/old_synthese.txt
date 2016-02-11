@@ -1,0 +1,277 @@
+Title:		Classification of compilation steps
+Author:		Lionel Auroux
+
+## Why a classification?
+### The classical compilation chain
+
+A compiler could be seen as a translator. It's the process that transform source code into executable.
+But the source code is subject to several transformations to produce the software. Many tools could be used in the chain of production.
+Parallel to the transformation of the source, abtracion level of the original idea is reduced from model to data.
+We can see things more generally. All the process begins in the mind. In a materialistic way, the reality emerge in our mind as a cognitive process. 
+From the idea to the tool, programming is just another method.
+
+### From model to data
+
+//TODO: obsolete
+![compilChain][]
+
+A very general chain of transforming could be :
+
+*	From the reality emerge in our mind, thru a cognitive process, the model
+*	The human transform this model into algorithms, this is conception
+*	The human translate algorithms into source code with the constraint of the language, the syntax, the paradigm, this is programming
+*	Source code is translated into intermediate code inside the compiler, this is compiler front-end.
+*	Intermediate code after type checking, several optimizations pass and transformations pass is translated into assembly code, this is compiler middle-end.
+*	Assembly code is translated into native code in a target file by the assembler, this is back-end.
+*	Native code stored in target files are linked together as a binary code program by the linker.
+*	Binary code as program, is loaded into memory as runnable code by the system.
+*	Runnable code in memory is filled by input data by user.
+*	The processor automata transform the input data thru the code into the result, this is computing
+
+This classical compilation chain is usefull for see how a program is created, but today applications are not composed by a single program.
+An application is composed by many librarys and programs. From strict performance side, all these dependences must be took account.
+Indeed, we need to measure in strict perfomance point of view, how generation technics allow to build better program.  
+
+The classical optimization technics are:
+
+* Best algorithm in term of complexity
+* Best choice of instruction of machine code (algorithm hardcoded)
+
+To illustrate this we present two case study that implement this two technics.
+
+### Case study SPIRAL
+
+SPIRAL[^1][][#SPIRAL] is a library for signal processing. It was generated to give highly optimized signal processing routines.
+These routines are :
+
+* Linear transform (discrete fourier transform, filters, wavelets)
+* BLAS (Basic Linear Algebra Subprograms)
+* SAR imagin (synthetic aperture radar)
+
+Some routines are discribes by a domain specific language called SPL to express DSP formulas.
+At building time, the SPL compiler translates the SPL code into C or fortran code and does some optimization (code unroll, code reordering).
+All these optimizations are done with certain set of factor.
+SPIRAL acts as an iterative compiler. After each run, post mortem analysis are done to find better optimization factor or better choice of routine set.
+// todo example
+
+[^1]:The acronym SPIRAL means Signal Processing Implementation Research for Adaptable Librairies.
+
+### Case study HPBCG
+
+HPBCG[^2][][#HPBCG] is a DSL for including compilettes in your code.  
+A compilette is a new way to optimize code at runtime.
+For instance, this allow you to put a chunk of assembly code in your current C code as the **__asm** statement do.
+So you can bind local variables in this code.
+But this chunk of assembly code isn't translated in native code at compile time. 
+It is done at runtime. 
+Via an external processing, the assembler chunks of code are parsed and the code generators are inserted.
+So this code generator binds values to variables at runtime and a specialized function is created.
+This technic avoid overhead of memory access (and cache miss) in hotspots.
+
+// todo example
+
+	#cpu cell
+	typedef int (*pifi)(int);
+	pifi multiplyFunc; 
+	
+	pifi multiplyCompile(int multiplyValue)
+	{
+	  insn *code;
+	
+	  posix_memalign(&code, 1024, 16);
+	  printf("Code generation for multiply value %d\n", multiplyValue);
+	  #[
+		.org	code
+		mpyi    $3, $3, (multiplyValue) 
+		bi $lr 
+	  ]#;
+	  printf("Code generated\n");
+	  return (pifi)code;
+	}
+
+
+[^2]: The acronym HPBCG means High Performance Binary Code Generator
+
+### Old paradigm don't fit new concepts
+
+Now, to produce software we use a lot of tools in the compile chain. Not only one compiler.
+A software is a result of many translations at different times.
+Think only with **compile time** and **runtime** to speak about compiler is to restrict.
+As shown in the study of SPIRAL and HPBCG , the final product can be the result of 2 or 3 transformations.
+In fact other times are hidden by the classical **compile time** and **runtime**.
+So we need to identify and try to classify all these different times.
+
+To do that, we need to analysis some different tool.
+Each tool must show a specific compilation step.
+This set must be the most heterogenous as possible.
+
+This is our set:
+
+* FFTW[][#FFTW]: a Fast fourier transform generator
+* SPIRAL: Code generation for DSP
+* Rathaxes[][#RTX]: Code generation for driver
+* Mesa[][#Mesa]: a 3d library
+* Gcc[][#gcc]: C/C++ (and more) compiler
+* llvm[][#llvm]: a modular backend for create compiler
+* Nanojit[][#nanojit]: a C++ library that allow to emits machine code
+* HPBCG: High Performance Binary code generator
+* VPU:[][#VPU] Fast, architecture neutral dynamic code generator
+* Java[][#java]: Compiler and virtual machine.
+* .NET[][#dotnet]: Compiler and virtual machine.
+* Cuda[][#cuda]: language extension for GPU programming
+* OpenCL[][#opencl]: language extension for GPU programming
+
+This state of the art show that different technics are used. 
+
+* ECG: External code generation  
+  High level algorithm representation and decomposition allow to generate specialized part of program.
+
+* ICG: Internal code generation  
+  Use program information to generate specialized part of program.
+
+* IT: Install time  
+  Copy program and dependencies into a specific machine.
+
+* LT: Load time  
+  Collect usable part of code and load program
+
+* SC: Static compilation  
+  Translate program into optimized machine code.
+
+* IC: Iterative compilation  
+  Use previous running information to optimize code
+
+* JIT: Just in time compilation  
+  Runtime code translation of already compiled IR in machine code.
+	
+* DDS: Data driven specialization  
+  Runtime selection of the fastest algorithm.
+
+First, we have problem to analysis this results. In fact, we see that all these heterogenous tools are different goals. But goals are mainly the same:
+
+* Give more or less abstraction
+* Give more or less optimization
+* Done early or late in compilation chain
+* Not the same concern: generate code from model or try to adapt from specific input data.
+
+But we could see that in fact all depend of different point of view:
+
+* Program point of view
+* Architecture point of view
+
+Our basic idea is to create an orhonormal that show differences and similarities of this set.
+To create this, we can put in X axis the **architecture point of view** and in Y axis the **program point of view**.
+Actually all tools of this set generate code but none in the same time.
+Early generations are really abstract and late generations tries to adapt the target code from data used.
+We can notice that the abstraction level and the time before instruction execution of targetted program are opposite. 
+So we put then on the same axis. It's difficult to represent a 3d orthonormal, so we decide to put our last axis as diagonal.
+
+![abstractionAxis][]
+
+We have a two major oposition: 
+
+* For the program view, model and data are opposite. More we have abstraction and we fit a model, less we take account about real data.
+* For the architecture, we have also a axis based of architecture abstraction. More multi-plateform we are, less we could take account real architecture.
+
+### Emergence of an organisation
+
+We have 4 domain centric:
+
+* Code generation centric: Mainly works on source code (or AST) guided by the model.  
+	- External code generation: generation via external tool after processing a DSL.  
+	- Internal code generation: features of language (preprocessing, metaprogramming) for a generation, use the semantics of the host language.  
+
+* Package centric: Mainly on architecture concrete, works on the system (type of OS and library), guided by the machine.  
+	- Install time: action taken when copying the software in the system.  
+	- Loading time: action taken when loading the software in the memory.  
+
+* Compiler centric: Cold optimization of the program guided by the source code.  
+	- Static compilation: classical compilation.  
+	- Iterative compilation: compilation with consideration of the preceding run.  
+
+* Runtime centric: Live optimization algorithm guided by the data and the concrete machine.  
+	- Just-In-Time: Compilation and dynamic specialization based on the data to be processed (hotspot compilettes). Huge runtime overhead.  
+	- Data Drive Specialization: selecting among a set of functions the most appropriate in mission to input data. Little or no runtime overhead.  
+
+![domainCentric][]
+
+### Use of our classification
+
+So now, with our representation we could compare tools and technics.
+//todo 
+
+### The perfect curve
+
+//todo
+Allowing to crawl into the different abstraction levels thru algorithms, from abstraction to real machine instructions in all different times of compilation, must be our goal.
+
+What's about:
+
+* Optimization?  
+  If we want to go further we need to cross the domains.
+
+* Multi-paradigm language?  
+  In fact we need a multi-domain language.
+
+### The perfect curve requirements:
+
+//todo
+Frontend agnostic
+
+Modularity and flexibility
+
+Multi-architecture
+
+Compilation and optimization
+
+Code emition handling (JIT and more)
+
+Could be LLVM?
+
+It's just a backend.
+A set of component/library not a "big ball of mud".
+From abstract to real.
+Allow passes extensions.
+Code creations hooks.
+
+### H... :
+
+All depends of the life of variables.
+* uses of variables and interaction
+* when values are known
+* when instruction are run
+
+so we could reinterpret our classification as a side effect of this fact.
+
+a coherent set of knownable data is a domain centric.
+
+[compilChain]: compilChain.png "The classical compilation chain" width=300px
+[abstractionAxis]: abstractionAxis.png "2D representation of times organisation" width=300px
+[domainCentric]: domainCentric.png "How domain fit together" width=300px
+
+[#SPIRAL]: PUSCHEL et al: SPIRAL CODE GENERATION FOR DSP TRANSFORMS in Proc. IEEE, vol. 93,no. 2,pp. 232-275, Feb. 2005.
+
+[#HPBCG]: High Performance Code Generator host at http://code.google.com/p/hpbcg/
+
+[#FFTW]: M. Frigo and S.G. Johnson: The Design and Implementation of FFTW3 in Proc. IEEE, vol. 93, no. 2, pp. 216-231, Feb. 2005.
+
+[#RTX]: Rathaxes, code generation for driver at http://code.google.com/p/rathaxes/
+
+[#Mesa]: The Mesa 3d Graphic Library at http://www.mesa3d.org/
+
+[#gcc]: GCC, the GNU Compiler Collection at http://gcc.gnu.org/
+
+[#llvm]: The LLVM Compiler Infrastructure at http://www.llvm.org/
+
+[#nanojit]: NanoJit at https://developer.mozilla.org/En/Nanojit/
+
+[#VPU]: I. Piumarta: The Virtual Processor: Fast, Architecture-Neutral Dynamic Code Generation in Proc. 3rd conference on Virtual Machine Research And Technology Symposium, vol. 3, pp. 8, 2004.
+
+[#java]: Java at http://www.java.com/
+
+[#dotnet]: .Net at http://www.microsoft.com/net/ 
+
+[#cuda]: Cuda at http://www.nvidia.com/object/cuda_home_new.html
+
+[#opencl]: OpenCl at http://www.khronos.org/opencl/
+

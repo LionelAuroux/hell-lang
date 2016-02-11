@@ -1,0 +1,92 @@
+% If you wish to cite FFTW in a general publication, we recommend this paper:
+
+@Article{FFTW05,
+  author = 	 {Frigo, Matteo and Johnson, Steven~G.},
+  title = 	 {The Design and Implementation of {FFTW3}},
+  journal = 	 {Proceedings of the IEEE},
+  year = 	 2005,
+  volume =	 93,
+  number =	 2,
+  pages =	 {216--231},
+  note =	 {Special issue on ``Program Generation, Optimization, and Platform Adaptation''}
+}
+
+% The following are additional papers on FFTW and related topics that
+% you may wish to cite in more specialized works.
+
+% A review of the considerations involved in implementing high-performance
+% FFTs in practice, explaining why issues such as memory access dictate
+% a different design from textbook radix-2 FFTs; some overlap with FFTW05.
+@InCollection{JohnsonFr08:burrus,
+  author = 	 {Steven G. Johnson and Matteo Frigo},
+  title = 	 {Implementing {FFT}s in Practice},
+  booktitle = 	 {Fast Fourier Transforms},
+  publisher = {Connexions},
+  year = 	 2008,
+  editor = 	 {C. Sidney Burrus},
+  chapter = 	 11,
+  address = 	 {Rice University, Houston TX},
+  month = 	 {September},
+  url = 	 {http://cnx.org/content/m16336/},
+}
+
+% This paper describes the codelet generator introduced in FFTW 2
+@InProceedings{FFTWgen99,
+  author = 	 {Frigo, Matteo},
+  title = 	 {A fast {Fourier} transform compiler},
+  booktitle = 	 {Proc. 1999 ACM SIGPLAN Conf. on Programming Language Design and Implementation},
+  pages =	 {169--180},
+  year =	 1999,
+  volume =	 34,
+  number =	 5,
+  month =	 {May},
+  publisher =	 {ACM}
+}
+
+% This was the main paper describing FFTW 1
+@InProceedings{FFTW98,
+  author =       {Frigo, Matteo and Johnson, Steven~G.},
+  title =        {{FFTW}: An adaptive software architecture for the {FFT}},
+  booktitle =    {Proc. 1998 IEEE Intl. Conf. Acoustics Speech and Signal Processing},
+  pages =        {1381--1384},
+  year =         1998,
+  volume =       3,
+  publisher =    {IEEE}
+}
+
+% This is an early technical report on FFTW, but since it is not readily
+% accessible we normally prefer the FFTW98 citation.
+@TechReport{FFTW97,
+  author = 	 {Frigo, Matteo and Johnson, Steven~G.},
+  title = 	 {The Fastest {Fourier} Transform in the West},
+  institution =  {Massachusetts Institute of Technology},
+  year = 	 1997,
+  number =	 {MIT-LCS-TR-728},
+  month =	 {September}
+}
+
+% This paper describes the general theory of cache-oblivious algorithms,
+% which can use the cache optimally without knowing the cache size by
+% exploiting recursion, ideas that are heavily used in FFTW.
+@InProceedings{CacheObliv99,
+  author = 	 {Frigo, Matteo and Leiserson, Charles~E. and Prokop, Harald and Ramachandran, Sridhar},
+  title = 	 {Cache-oblivious algorithms},
+  booktitle = 	 {Proc. 40th Ann. Symp. on Foundations of Comp. Sci. (FOCS)},
+  pages =	 {285--297},
+  year =	 1999,
+  publisher =	 {IEEE Comput. Soc.}
+}
+
+% This paper describes a new FFT algorithm that lowers the total exact count
+% of real-arithmetic operations (additions and multiplications) over
+% the previous record set by Yavne in 1968 (the split-radix algorithm).
+@Article{JohnsonFrigo07:splitradix,
+  author = 	 {Steven G. Johnson and Matteo Frigo},
+  title = 	 {A modified split-radix {FFT} with fewer arithmetic operations},
+  journal = 	 {IEEE Trans. Signal Processing},
+  year = 	 2007,
+  volume =	 55,
+  number =	 1,
+  pages =	 {111--119}
+}
+

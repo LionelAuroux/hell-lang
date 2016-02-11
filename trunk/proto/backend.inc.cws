@@ -1,0 +1,148 @@
+#include "nodecmd.inc.cws"
+
+declare function	checkTree(theCode : node);
+declare function	purifize(astNode : node);
+declare function	typeControl(astNode : node, listInfoType : node);
+declare function	compile(theCode : node);
+declare function	emitNode<T>(theNode : node, ctxOutput : node);
+
+// fonction de base pour backend pour faire des tests en LLVM
+
+insert this.depth = 0;
+
+// valide l'arbre de parsing...effectue le controle de type etc...
+function	checkTree(theCode : node)
+{
+  local listInfoType;
+  foreach decl in theCode.block
+  {
+    if (decl.type_node == "def")
+      {
+	ref listInfoType = decl.block;
+	insert listInfoType.variablesType;
+	insert listInfoType.listControl = "resolved";
+	foreach expr in decl.block
+	{
+	  // TODO: voir l'ordre...
+	  typeControl(expr, listInfoType);
+	  purifize(expr);
+	}
+	if (listInfoType.listControl != "resolved")
+	  {
+	    traceLine("des types restes non resolue");
+	    traceObject(listInfoType, 1);
+	    return false;
+	  }
+      }
+  }
+  return true;
+}
+
+
+function	purifize(astNode : node)
+{
+  if (existVariable(astNode.life_time) && astNode.life_time != "is_mix" && astNode.life_time != "")
+    {return astNode.life_time;}
+  if (existVariable(astNode.op))
+    {
+      local right_pure = purifize(astNode.right);
+      local left_pure =  purifize(astNode.left);
+      if (left_pure == right_pure)
+	{
+	  insert astNode.life_time = left_pure;
+	  return astNode.life_time;
+	}
+    }
+  insert astNode.life_time = "is_mix";
+  return astNode.life_time;
+}
+
+// parcours de l'arbre est mise en adequation des types
+function	typeControl(astNode : node, listInfoType : node)
+{
+  // condition d'arret: on retourne le type connu
+  if (existVariable(astNode.type_hell) && astNode.type_hell != "undef")
+    {	return astNode.type_hell;}
+  // TODO: overload + type_node == callable
+  // si c'est une fonction: on cherche ca def pour avoir type de retour
+  if (existVariable(astNode.params))
+    {
+      return astNode#parent#parent#parent.symbol[astNode.id];
+    }
+  // si type inconnu et operateur binaire
+  if (existVariable(astNode.op))
+    {
+      // on va chercher le type a droite
+      local right_Type = typeControl(astNode.right, listInfoType);
+      // operateur de typage.... le type de l'expression provient du type de droite
+      if (astNode.op == ":" || astNode.op == ":=")
+	{
+	  insert listInfoType.variablesType[astNode.left.id] = right_Type;
+	  // on recurs sur la gauche pour resoudre le type a gauche
+	  // TODO: pour le cast, changer par une fonction qui renseigne recursivement le type 
+	  return typeControl(astNode.left, listInfoType);
+	}
+      // on essaie de resoudre le type a gauche
+      local left_Type = typeControl(astNode.left, listInfoType);
+      // coherence des types
+      if (left_Type != right_Type)
+	{
+	  traceLine("type gauche et droite non compatible");
+	  traceLine(left_Type + " ?? " + right_Type + " line:" + astNode._line + " col:" + astNode._col);
+	  return "undef";
+	}
+      return left_Type;
+    }
+  // si element terminal, mais valeur undef
+  if (astNode.type_hell == "undef")
+    {
+      // si c'est une variable connait on le type?
+      if (astNode.type_node == "id" && listInfoType.variablesType[astNode.id] != "")
+	{
+	  // affecte le type
+	  astNode.type_hell = listInfoType.variablesType[astNode.id];
+	  traceLine("le type de " + astNode.id + " est " + astNode.type_hell);
+	  // on le retourne
+	  return astNode.type_hell;
+	}
+      else
+	{
+	  // type non resolu
+	  pushItem listInfoType.listControl;
+	  ref listInfoType.listControl#back = astNode;
+	  listInfoType.listControl = "unresolved";
+	  return "undef";
+	}
+    }
+}
+
+// compile un .block
+function	compile(theCode : node)
+{
+  local ctxOutput;
+  insert ctxOutput.header;
+  insert ctxOutput.text;
+  insert ctxOutput.footer;
+
+  foreach decl in theCode.block
+  {   
+    emitNode<decl.type_node>(decl, ctxOutput);
+  }
+  return ctxOutput.header + ctxOutput.text + ctxOutput.footer;
+}
+
+function	emitNode<T>(theNode : node, ctxOutput : node)
+{
+  ctxOutput.text += "emit " + T + " " + theNode.name + "\n";
+}
+
+function	emitNode<"extern">(theNode : node, ctxOutput : node)
+{
+  ctxOutput.header += "// cree le prototype de " + theNode.name + "\n";
+  ctxOutput.header += "std::vector<const Type*>	proto_" + theNode.name + ";\n";
+  // param
+  ctxOutput.header += "FunctionType	*type_" + theNode.name 
+    + " = FunctionType::get(Type::getVoidTy(getGlobalContext()), proto_" + theNode.name + ", true);\n";
+  ctxOutput.header += "Function	*f_" + theNode.name + " = Function::Create(type_" + theNode.name 
+    + ", Function::ExternalLinkage, \""+ theNode.name + "\", TheModule);\n";
+}

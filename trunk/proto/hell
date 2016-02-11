@@ -1,0 +1,2 @@
+#!/bin/sh
+codeworker -script hell.cws -args $*

@@ -1,0 +1,22 @@
+/*
+	Script d'enchainement de proto HELL
+*/
+
+#include "backend.inc.cws"
+
+traceLine("Proto Hell Language..." + _ARGS[0]);
+local sOutput = _ARGS[0];
+
+traceLine("-->" + sOutput);
+local theCode;
+insert theCode.name = sOutput;
+parseAsBNF("./hell.cwp", theCode, sOutput);
+local treeFile = getWorkingPath() + sOutput + ".ktree";
+local bReadyToCompile = checkTree(theCode);
+saveProject(treeFile, theCode);
+if (bReadyToCompile == true)
+  {
+    local cppFile = getWorkingPath() + sOutput + ".gen.cc";
+    generate("./hell.cc.cwt", theCode, cppFile);
+  }
+

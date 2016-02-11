@@ -1,0 +1,23 @@
+Intitulé:
+"Extensions de la sémantique des langages pour intégrer des concepts d'optimisation bas niveaux".
+
+1) Axe Etat de l'art/ classification.
+
+De l'analyse d'un certain nombre d'outil permettant ou mettant en place des optimisations, 
+classer/organiser les différentes techniques d'optimisation et leur effet.
+
+a - classification : modéle conceptuel repère orthonormé -> classement tableau
+       - présentation PRISM
+       - Typology*
+b - effet :
+
+        - benchmarks
+                - HPBCG 
+                        RPN : Eval, Static, Codegenerator
+                - FFTW
+                        
+c - experimentations LLVM :
+        - byte code + JIT
+        - relink dynamique
+        - AST manip clang
+        - HLCG

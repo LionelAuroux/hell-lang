@@ -1,0 +1,372 @@
+Title:		Classification of compilation steps
+Author:		Lionel Auroux
+
+## Classification of compilation steps
+
+In the past, compilation was a matter of translation from a not such very high level language to machine code 
+on simple processor. 
+From expensive processors and computers, limited for specific uses, the industry evolved to cheap computers and processors, 
+widely diffused with huge spectrum of uses:
+
+*	For servers or desktops
+*	For video-gaming
+*	For set-top box (or multimedia center)
+*	For embedded small device
+*	...
+
+Motivated by these revolutions, processors becomes more and more powerfull and complex.
+Processors have evolved to feed the needs of different use cases and different configurations.
+As explain in the video "Not Your father's Von Neumann Machine: A crash course in Modern Hardware"[#CRASH][] and in the 
+book "Computer Architecture: A Quantitative Approach"[#PATTERSON2][], the research of CPU Performance over time can be divide into 3 era:
+
+*       Early time to 1985 with the CISC era
+*       Between 1985 to 2002 with the Frequency scaling era
+*       Since 2002 with the multicore era
+
+To abstract this evolution, in early time the ISA of architecture are designed to be used by humans.
+So instruction mimic high level language mecanism. Some complex functions that are now in library was hard coded.
+Instruction set are orthogonal with multiple indirection in a single instruction.
+Architecture of processor are complex but cycles by instruction are highly predictable.
+
+But this type of processor was difficult to scale, so the RISC architecture by avoiding the memory indirections in instruction set with a clear separation 
+of loads and stores, made the processor simpler and cheaper. 
+With a reduced instruction set, the cycle per instruction was reduced with instruction level parallelism provided by wider pipeline.
+Evolution in processor burning allow to easily increase clock frequency.
+For 15 years, we are able to scale CPU performance at ~50% by year.
+
+After reaching a peak of clock frequency in 2002[#PATTERSON1][], manufacturers try to find additional power by increasing the number of instructions per Cycle 
+of processor.
+To do so, we tend to increase the parallelism in the design of processors.
+Now, the power gain come with :
+
+*       multicore
+*       hyperthreading
+*       multiprocessors (homogeneous, heterogeneous)
+
+In parallel to this trend and despite the RISC design of new processor, the ISA of processors provide some specialized instructions in response
+to specific software: Vectorized instructions for video games or multimedia, specialized instructions for cryptography.
+And the two trends merged.
+For example, the last intel core i7 propose 4 hyperthreaded core, last version of SSE (Streaming SIMD Extensions), specialized instructions for cryptography (AES), 
+and specialized instruction to compute CRC.
+
+This complexity could provide great performance but is counterbalanced by a difficulty to tune the code to produce.
+The research field of High performance computing give a lot of result to explain and to surround this problem.
+The paper "Compiler Transformations for high-performance computing"[#BACON][] present a lot of optimization techniques for both uniprocessors 
+and high performance processor (superscalar, vectorized, multiprocessor).
+Basically:
+
+*       For uniprocessor, we try to reduce the number of instructions executed.
+*       For high performance processor, we try to maximize parallelism and memory locality
+
+The number of cycle of one instruction is now unpredictable in superscalar, pipelined architecture.
+The number of cycle consumed by one instruction depends of code control flow, data dependency and locality, state of cache or state of other core or processor.
+Frequency of processor has reach a peak however memory frequency is far of CPU performances. 
+While modern processors have two or three level of cache to reduce this memory latency effect, in worst case one instruction could take several hundred clock 
+cycles against 2 or 3 in better case.
+So memory latency still dominate performance due to cache misses but other parameter still exist: global number of instruction, ILP, ... 
+This is a major justification for the heavily use of benchmark in HPC field, we empirically needs to control the real 
+performance of a code, we can't easily predict it.
+
+To reach performance in this environment a lot of technique has been developed to surround this non-deterministic behavior.
+For example and without minimize other aspect, the importance of cache misses impose the control of data locality with techniques like loop unrollings, 
+paddings but these could be difficult to add without automatized tools. How these techniques could interact with other optimization on other 
+aspect (code dependency, ILP, ...)? 
+
+In parallel, programming languages and compilers design follow old models not in line with this new reality. 
+From beginning, compilers include some optimizations and some efficient modern loop management techniques were recently add in major implementations of compiler.
+But a lot of tools was developped to propose new techniques and palliate compiler lacks.
+
+All these tools made the programmer perplexe for solve a new problem: Understanding the complexity of interaction of these techniques.
+This increasing complexity of processors makes the production of efficient code in the compilation chain an interesting problem.
+
+It become necessary to review the classical compilation chain and to extend it to take account of these new perspectives.
+We propose a schematic representation of the modern compilation chain. 
+A schematic representation of this state of the art could be easily discussed, learned and extended.
+To do so, we need to list all known techniques implemented by tools and to find a classification between these techniques.
+To create our classification we follow these objectives:
+
+*	First, we need to evaluate the strength of each techniques used. So, we need to understand how the technique is performed.
+	Detailing the kind of algorithm used, the data processed, we perform the state of the art of the domain.
+*	Second, we need to find the organization behind all this techniques. So, we need to know when the technique is applied.
+	Understanding how techniques are articulated, allow us to combine it or to derive it as new tools.
+*	Finally, due to evaluating and organizing of techniques, we could compare existing tools. If we have common indicator, we could compare performance,
+	code size, memory consumtion. without it, it's difficult to compare bare performance of tools that didn't do the same things.
+
+### Analysis
+
+First, we can analyze the different stage of the compilation chain: 
+
+*	Specification Time:
+	Before writing programs in a computer language, we design it. 
+	To do so, we could write algorithms in natural language or use specification languages (textual or graphical). 
+	They are domain specific (aka DSL[][#DSL]).
+	The main difference between specification language and High level programming language is that a specification language doesn't takes account of all problematics of a computer[][#DSLCOMP]. 
+	We can translate automatically a specification language into a programming language but technics used are more preprocessing than compiling.
+
+*	Compile Time:
+	Classical compiler work at this stage. We could identify two sub-level due to programming level abstraction:
+	*	High level programming languages that support high programming paradigm (functionnal, parallel, agent) are considered as high level 
+	programming language if they try to be for general purpose programming (aka GPL).
+	*	Low level programming languages are basically assembler languages.
+
+*	Package Time:
+	The concern of package time is to handle all files produced at compile time in order to pack them into a single installable component. 
+	At this time a lot of optimization could be applied to adapt binary code to the final execution environment. 
+	So we notice two sub-levels:
+	*	Package : When the program, the component or the library is built and packed in an installation package, the target are known so 
+		architecture independant optimization could be done by selecting source code to built.
+	*	Deploy or Install : When the installation package are really executed and used to install the program, the component or the library,
+		the execution environement is known so test could be done for selecting function variants or set of parameters for future execution.
+
+*	Execution Time:
+	We notice two sub-step for this process that :
+	*	File : Programs, components and libraries are projected into memory from files. 
+		This computing is performed by the system with the help of the binary loader and dynamic library loader during the execution 
+		and optimization could be applied. Working on symbols loaded, LTO[][#LTO] (Link time optimization) could reduce size of memory by 
+		eliminating redundant or unused code, or adapt program to environment by choosing variant or generating code.
+	*	Memory : All is loaded, but during execution some optimizations could be applied. We could adapt code to the real data processed by the 
+		program by selecting best function variants with late bindings or generating code with JIT[][#JIT] (just in time compilation) 
+		or fastest code generators (compilette).
+
+We propose to list all known optimization and to categorize it. 
+Four category emerge:
+
+*       Reducing Number of Instruction
+*       Emit Best Instruction
+*       Reduce Memory Latency
+*       Increase CPI
+
+![ListTechnics][]
+
+To extract from these various stages of compilation the efficient techniques and to detail them, we need to describe the transformation process according 
+to the following scheme:
+
+*	Input: Input code consumed by this stage.
+
+*	Available information: Available information into the input.
+
+*	Intermediate representation: Internal representation of the code used for analyses and transformations.
+
+*	Analysis: Algorithm used to extract or compute available informations in order to apply transformations.
+
+*	Transformation/Optimisation: Kind of optimization or transformation that can be applied in order to increase performance.
+
+*	Output: Output code produced by this stage.
+
+Now we can characterize all compilation steps thru this scheme to get a global overview for all compilation process.
+
+![OverView][]
+
+<!-- \newpage -->
+
+### Tools
+
+To illustrate this, we present a case study of tools that implement different technics for differents needs.
+
+Our list takes account of several aspects of the problematic:
+
+*	External tool for generate part final software
+*	Emergence of language for heterogeneous processor
+*	Evolution of classical compiler
+*	Needs for runtime generation of native code (i.e : for performance of interpreted languages).
+
+So we have selected for these 4 groups.
+
+*	FFTW[][#FFTW] (External tools group): 
+
+FFTW is a Fast fourier library. This library is considered as the fastest collection of FFT functions.
+
+Specification Time: FFT algorithms have been decomposed into computing unit called codelets. 
+
+Compilation Time: A Caml program is used to produce many C variant for these codelets specialized for specific data size.This generator of codelet uses many optimization strategies (constant folding, algebraic identities, loop unrolling).
+
+Package Time: During the installation of the library, many composition of codelets are tried, and the fastest are selected for this plateform. 
+
+Execution Time: We instanciate a planner for doing a FFT of a specific size and we use the planner with the current data to treat.
+
+*	SPIRAL[][#SPIRAL] (External tools group): 
+
+SPIRAL is a Digital Signal Processing library.  SPIRAL contains several DSP transformation functions. In fact a Domain Specific Language (DSL) was created to write formula of transform algorithms in such a way that it should be easier to optimize the code. In the same way of FFTW and for performance reasons, SPIRAL is partially generated thru this language. So SPL (Signal Processing Language) has been designed to express these formulas and to retain information (vectorization, parallelism) to translate formulas into efficient code. The SPL compiler produces an efficient C (or fortran) code by performing high and low level optimizations. High level optimizations are done at the formulas level such as use of vector or threading intrinsics (block parallelization). Low level optimizations are done at the C (or fortran) level such as array scalarization, algebraic simplification, constant and copy propagation, common sub-expression, loop unrolling and dead code elimination. Finally, SPIRAL automates the optimization and tuning process. During the library compilation, it combines different algorithms to find the best variant for a given problem size. For this, it compiles and runs the generated code for each variant and use feeback from execution to select the best variant. 
+
+*	Mesa[][#MESA] (External tools group): 
+
+A 3d library. Unlike FFTW and SPIRAL that use external code generators to produce efficient C code, Mesa use wisely the CPP (C preprocessor) to acheive this goal. A bunch of basic functions are in fact template based macros in C or in assembler and during the compilation, the informations of the targetted plateform are used to select and compose the final code translated into native code. Thru this technique, handcrafted and optimized functions using correct vector instructions, loop unrolling with fixed factors are written. However, these such functions has been an effort for the library developers and remains tough to maintain.
+
+*	CUDA[][#CUDA] (Language dialect group):
+
+	Compute Unified Device Architecture is a parallel computing architecture developped by 	Nvidia for their GPGPU. Thru a C dialect language and the adhoc compiler, developpers 	access to the vectorized instruction set and memory of the parallel model of the GPU. The 	compiler proposes a heterogeneous model. At compile time, it translate kernel functions 	(identified by the 	qualifier __global__) into native GPU instructions and the other 	functions into host native instructions. Instrumentation is added to load GPU instructions 	into the device thru runtime API. However the CUDA is limited to the Nvidia product.
+
+*	OpenCL[][#OPENCL](Language dialect group):
+
+OpenCL is an open standard to provide a framework for programming parallel computing architecture. Using the same heterogeneous model than CUDA but for all architecture, OpenCL provide also his own C dialect and compiler.
+
+*	Gcc[][#GCC] (Classical compiler group):
+
+C/C++ (and more) compiler. It could be weird to include a classical compiler into our sets but a compiler is also a code generator. So our typology is not just for tools, but are more general. Another remark, it's that the classical compilation of C is not just done by one big tool. The classical C compilation is divide in 4 stages: C pre-processing, C compilation to assembler, assembly, link.
+
+*	clang/llvm[][#LLVM] (Classical compiler group): 
+
+a modular frontend (clang) and a backend for create compiler (llvm). If we include the most known compiler we could compare it with is best competitor. LVM is a backend for compilation. LLVM is a collection of C++ library which provide all usefull functions to create low-level instructions, create passes to optimize code, produce native instructions for many targets. CLang is a C familly languages frontend (C, C++, ObjectiveC) and is also a C++ library. The communication between Clang and LLVM is done thru a standardized and common Intermediate Representation of  low-level instructions encoded as a bytecode or used as C++ API.
+
+*	Nanojit[][#NANOJIT] (Runtime generation group): 
+
+A C++ library that allows to emit machine code at runtime. Nanojit is used by SpiderMonkey the open source implementation of javascript for mozilla/firefox and Tamarin the open source implementation of actionscript for flash support in mozilla/firefox. It provides usefull functions to build an Internal Represention easily translatable into native code. It's also a stack based virtual machine like a JVM. Codes are quickly generated so no good optimization are really done.
+
+*	HPBCG[][#HPBCG] (Runtime generation group): 
+
+High Performance Binary code generator. HP BCG is a dynamic code generator. Briefely defined, a dynamic code generator is a way to produce block of native code instructions during runtime and run before the hotspot. This allow to create a specialized function on certain parameter of the program only known at runtime, for instance after a configuration phase; and so eliminate some dead code, reduce the arity of functions, unroll loops, used correct vector instructions depending of vector size. HPBCG is low level oriented and allow to write code generator directly in assembly in a C file for the following plateforms : Cell, Itanium, power4. In fact, the code generators are translated into macro calls by an external tool that preprocesses the code. So this stage is done before the classical compilation. At runtime, macro calls construct the native code buffer with runtime values. The buffer could be used as a function later during the program lifetime.
+
+*	VPU[][#VPU] (Runtime generation group): 
+
+Fast, architecture neutral dynamic code generator. Unlike hpbcg, VPU is not low level oriented but allows to write code generators with a set of mnemonics of a stack based virtual machine instead of a real ISA (Instruction Set Architecture). We don't need an external tool, use of mnemonic are done thru a C API. Calling these functions constructs LIR node (Low-level Intermediate Representation) for this virtual machine. Native code is emit at demand with the API. Some type checking and peephole optimization are done during compilation. VPU doesn't support vector instructions but it allow to use code generator in a portable way.
+	
+*       Rathaxes[][#Rathaxes] ():
+
+*       Fortress[][#Fortress] ():
+
+
+### Using the classification for create a new tool : HLCG (High code level Generator)
+
+As example, we took a tool that we know well, where the compiler and sources are available : HPBCG. The initial motivation behind HPBCG is to provide access to specialized low-level operations like:
+
+- vector instructions.
+- satured arithmetics.
+- explicit instructions level parallelism.
+
+HPBCG allows specialization of functions based on runtime data values or on other dataset properties like memory alignment. 
+For example, one functionality of HPBCG is to allow the creation of dynamically generated functions specialised for data known at runtime.
+
+The following example shows the dynamic construction of an arithmetic function that use the operand value of the imul native instruction as constant instead of a classical stack based argument value:
+
+        #cpu x86 
+        typedef int (*pifi)(int); 
+        pifi multiplyCompile(int multiplyValue) 
+        { 
+          insn *code= (insn *)calloc(1024, sizeof (insn)); 
+          printf("Code generation for multiply value %d\n", multiplyValue); 
+          #[ 
+        	.org	code 
+             	push   %ebp 
+             	mov    %esp,%ebp 
+             	mov    0x8(%ebp),%eax 
+                imul   $(multiplyValue),%eax,%eax 
+             	pop    %ebp 
+             	ret    
+          ]#; 
+          iflush (code, hpbcg_asm_pc); 
+          printf("Code generated\n"); 
+          return (pifi)code; 
+        } 
+
+From this simple example we could notice:
+*	As shown in the cartography ID, HPBCG work at native instruction level.
+*	We could mix instruction with C statement and specify the C variable to use.
+
+In fact, we try to do some dynamic currying of function like in functionnal language but at native instruction level. 
+We want to do it at a higher level, for example at C level to write more complex functions.
+
+First, the classification help us to understand how HPBCG works.
+Mainly, the job is done during two specific time:
+	At compile time and at high level, the tool translate marked chunks of code into instrumented C statement (using ad hoc preprocessing macros).
+	At execution time and in memory, the injected C statement first create a chunk of memory that will receive the instruction stream that will be issued. Thereafter each native instruction converted at compile time was replaced by an equivalent call that emits the corresponding instruction.
+
+
+Now we can follow the same model with the single goal to substitute the mechanism of translating pieces of native instructions by a new mechanism of translating C functions.
+To do so,  we could modify the original code of HPBCG but due to the complexity of C code handling we prefer to change the technologie used for the tool. Our choice is the LLVM framework for all the useful librairies available.
+
+With LLVM and especially Clang libraries, we could:
+Handle the C function propose for currying at internal representation level (LLVM IR).
+Compile it and obtain a native instruction stream.
+Handle offsets inside instruction stream to inject future value as constant operand value of instruction.
+Inject a runtime library for memory handling of executable memory page, curried function instanciation, value substitution and finally execution.
+
+Finally we recreate all the steps done by HPBCG but at C level. So the same example of multiplyCompile with HLCG:
+
+        #include <stdio.h> 
+        #include <stdarg.h> 
+        #include <sys/mman.h> 
+        // need some adhoc functions 
+        #include "compilette.h" 
+        
+        int	multiplyCompileAndAdd(char *s, int a, int b, int c) 
+        { 
+        	printf(s, a, b, c, printf); 
+        	return a * b + c - 666; 
+        } 
+        
+        // allow to compile foo and provide some adhoc data and types for foo 
+        COMPIL(multiplyCompileAndAdd); 
+        
+        int	main() 
+        { 
+        	// create a specialized function with constant value 666 change into 999 
+        	ptr_foo 	new_foo = (ptr_foo) compilette(JIT_NAME(multiplyCompileAndAdd),
+        		 	SIZE_NAME(multiplyCompileAndAdd), 
+        			RELOC_NAME(multiplyCompileAndAdd), 
+        			CONST_NAME(multiplyCompileAndAdd), 40, 999, -1); 
+        	printf("TEST:%d\n", new_foo("//compilette version: %d %d %d %p\n", 1, 2, 3)); 
+        } 
+
+### Using the classification for tool comparison: HLCG vs HPBCG
+
+For tool comparison, we need to be structurally identical in our cartography.  And so we used the cartography to create HLCG from HPBCG. So HLCG and HPBCG are structurally identical in our assertion. 
+In addition to being structurally identical, we must also compare the tools on presenting examples of common functionalities. So we must restrict comparison on currying functionalities common between HLCG and HPBCG. But our example must also be relevant to present an accessible common use case in the industry.
+
+To take benefit of currying of function, we present an example of an expression interpretor with variables (i.e : 3*a+42).  This kind of functionnalities is common in all interpreted languages.
+So we give an expression with variable in an hand, and  the list of values of variables in the other hand.
+We create a handwritten function that takes this input and resolve it as reference, thereafter a HPBCG version and a HLCG version.
+
+We try to compare two things for the tool version. First, the distribution of time passing at different stages (respectivelly pecification,compile,package,execution time) to apply all the transformations. Next, the raw performance gain between the three version.
+
+But is not so simple, we could measure the compile time for our examples but the 3 version of our code are so different that the basic comparison is irrelevant. Our choice is to compute the time during this phase by the size of code emit in bytes.
+Same problem for the execution time.  The performance gain observe between the tool and the reference version must be divide by the overhead measured outside the hotspot.
+
+// INC RES
+
+### Comparing tools structurally different?
+
+As shown in the comparison for tools structurally identical, produce a relevant result is difficult. So to really different tools, make a comparison have any sense? we can have tracks on the difference but no quantitative information. In fact, it may be more interesting to see how the tools are organized together and if they could used together.
+
+// TODO
+
+[ListTechnics]: ListTechnics.png "List of optimisation" width=500px
+[OverView]: OverView.png "The classification" width=500px
+
+
+[#SMITH]: M. D. Smith, « Overcoming the challenges to feedback-directed optimization (Keynote Talk) », in ACM SIGPLAN Notices, 2000, vol. 35, p. 1–11.
+
+[#DSL]: M. Voelter, « Best Practices for DSLs and Model-Driven Development », JOURNAL OF OBJECT TECHNOLOGY, vol. 8, n. 6.
+
+[#PATTERSON1]: Computer Organization and Design, 4th Ed, D. A. Patterson and J. L. Hennessy.
+
+[#PATTERSON2]: Hennessy, John L., and David A. Patterson. Computer Architecture: Quantitative Approach Fourth Edition, n.d.
+
+[#CRASH]: “InfoQ: A Crash Course in Modern Hardware”, n.d. http://www.infoq.com/presentations/click-crash-course-modern-hardware.
+
+[#BACON] : Bacon, D. F, S. L Graham, and O. J Sharp. “Compiler Transformations for High-performance Computing.” ACM Computing Surveys (CSUR) 26, no. 4 (1994): 345–420.
+
+[#DSLCOMP]:K. Korhonen, « Motivation and Hypothesis for Comparison between Component Frameworks and DSL Paradigms », in OOPSLA Workshop on Domain-Specific Visual Languages (DSVL’01), 2001.
+
+[#JIT]: J. Aycock, « A brief history of just-in-time », ACM Computing Surveys (CSUR), vol. 35, n. 2, p. 97–113, 2003.
+
+[#LTO]: B. De Bus, B. De Sutter, L. Van Put, D. Chanet, et K. De Bosschere, « Link-time optimization of ARM binaries », in ACM SIGPLAN Notices, 2004, vol. 39, p. 211–220.
+
+[#FFTW]: M. Frigo et S. G. Johnson, « FFTW: An adaptive software architecture for the FFT », in IEEE International Conference on Acoustics Speech and Signal Processing, 1998, vol. 3.
+
+[#SPIRAL]: B. B. Fraguela, Y. Voronenko, et M. P\üschel, « Automatic tuning of discrete fourier transforms driven by analytical modeling », in 2009 18th International Conference on Parallel Architectures and Compilation Techniques, 2009, p. 271–280.
+
+[#MESA]: http://www.mesa3d.org
+
+[#CUDA]: CUDA C Programming Guide Version 3.2
+
+[#OPENCL]: The OpenCL Specification 1.1
+
+[#GCC]: http://gcc.gnu.org
+
+[#LLVM]: http://www.llvm.org
+
+[#NANOJIT]: https://developer.mozilla.org/En/Nanojit
+
+[#HPBCG]: Henri-Pierre Charles and Khawar Sajjad. Hpbcg high performance binary code generator. http://hpbcg.org/, 2009 .
+
+[#VPU]: I. Piumarta, « The virtual processor: Fast, architecture-neutral dynamic code generation », in 2004 USENIX Java Virtual Machine Symposium, 2004, vol. 150.

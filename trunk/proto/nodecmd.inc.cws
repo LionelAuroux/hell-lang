@@ -1,0 +1,47 @@
+// fonction de creation de nodeCmd pour la generation en code LLVM
+
+declare function	nodeCmd_Item(theNode : node);
+declare function	nodeCmd_Op(theNode : node);
+declare function	nodeCmd_CopyItem(theDst : node, theSrc : node);
+
+function	nodeCmd_Item(theNode : node)
+{
+  // attributes list
+  insert theNode.attributes["unkown"] = 1;
+  // id, value, type, cmd, undef
+  insert theNode.type_node = "undef";
+  // possible subnode:
+  // theNode.id si type_node == id
+  // theNode.value si type_node == value
+  // theNode.type_hell si type_node == tname
+  // theNode.id/op/param1/param2 si type_node == cmd
+  // i8, i16, i32, string, nia, plop ..., undef
+  insert theNode.type_hell = "undef";
+}
+
+function	nodeCmd_CopyItem(theDst : node, theSrc : node)
+{
+  setall theDst.attributes = theSrc.attributes;
+  theDst.type_hell = theSrc.type_hell;
+  theDst.type_node = theSrc.type_node;
+  if (theSrc.type_node == "value")
+    {
+      insert theDst.value = theSrc.value;
+      return;
+    }
+  if (theSrc.type_node == "id" || theSrc.type_node == "cmd")
+    {
+      insert theDst.id = theSrc.id;
+      return;
+    }
+}
+
+function	nodeCmd_Op(theNode : node)
+{
+  nodeCmd_Item(theNode);
+  theNode.type_node = "cmd";
+  insert theNode.op;
+  insert theNode.id;
+  insert theNode.param1;
+  insert theNode.param2;
+}

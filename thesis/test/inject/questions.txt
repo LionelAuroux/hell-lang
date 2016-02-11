@@ -1,0 +1,19 @@
+
+remarques:
+- que ce soit sur float/double, clang genere plutot des instructions type MMX/SSE1/SSE2 (sauf pour long double), gcc utilise le fpu meme en O3.
+- inline asm inactif lors du JIT
+
+questions:
+- les instructions sur float/double utilise un constant pool pas de constante en operand
+
+
+a voir biblio:
+
+	split computing
+	couseau
+
+a voir:
+	ordre de grandeur
+	temps C -> BC
+	temps BC -> binaire
+	temps modif specialiser du binaire

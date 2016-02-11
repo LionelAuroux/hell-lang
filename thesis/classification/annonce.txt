@@ -1,0 +1,13 @@
+Hello,
+I will be giving a presentation next Wednesday may 12th at 5pm in room 301.
+subject:
+
+Now, the compile chain is more complex than ever.
+To produce a software, we could use a lot of different tools to produce intermediary code in different language.
+
+For example, DSL, meta-programming and just-in-time compilation could be used in a same software.
+
+We need to classify and identify all this steps in the compilation if we want to go beyond.
+
+So we try to produce this on a set of different tools and we are ready to show you our first results.
+Q&A will follow to discuss our choices.

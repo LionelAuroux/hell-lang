@@ -1,0 +1,37 @@
+Preliminary reflections after analysing some other tools.
+
+= Introduction =
+
+In the following document, we try to identify different step in a software creation process.
+
+See [http://hell-lang.googlecode.com/svn/thesis/classification/Classification.ods Classification]
+
+Our goal is to identify the different date when we could generate part of code in a compiler chain.
+
+From the study of a set of different software, we found the following step:
+  * ECG: External Code Generation
+  * ICG: Internal Code Generation
+  * IT: Install Time
+  * LT: Loading Time
+  * SC: Static Compilation
+  * IC: Iterative Compilation
+  * JIT: Just-in-Time Compilation
+  * DDS: Data-driven Specialization
+
+We see compiler chain as a successive refinement of abstraction.
+
+
+
+Model
+Data
+Architecture
+
+Data:
+* forms (rely to model)
+* size/pad
+* values
+
+Architecture:
+* memory representation (align, hierarchy (cache L1, L2, TLB)
+* Arithmetic (parallel operation)
+* topology (mono-multi proc, distributed)

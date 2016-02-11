@@ -1,0 +1,3 @@
+(fftw-3.2.2 fftw_wisdom
+  (fftw_codelet_n1_64 0 #x11bdd #x11bdd #x0 #x157f4fc4 #xf661064c #x6da5b539 #x036b5de8)
+)

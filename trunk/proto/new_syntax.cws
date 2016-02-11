@@ -1,0 +1,109 @@
+//
+// just a test for syntaxe
+//
+
+#include "cwTools.inc.cws"
+
+local dummy;
+local input;
+generateString({
+
+        @extern
+        printf=(str = void to *[?_=0] byte, ...)
+
+        @extern
+        malloc=(size=0) *[size] byte
+
+        main=:
+                a = 12
+                b = "toto"
+                printf("test %d %s\n", a, b)
+
+@}, dummy, input);
+
+local source;
+parseStringAsBNF({
+
+        unit ::= #ignore(C++)
+                        [#pushItem(this) expr(this#back)]+
+                #continue #empty
+        ;
+
+        expr(theNode : node) ::=
+                // infix operator
+                lvalue(theNode) ['=' #insert(theNode.param) #pushItem(theNode.param) rvalue(theNode.param#back) ]?
+        ;
+
+        rvalue(theNode : node) ::=
+                /* ref_operator */
+                lvalue(theNode)
+        ;
+
+        lvalue(lhs : node) ::=
+                lhs(theNode) 
+                [       => local rightNode;
+                        op
+                        lhs(rightNode)
+                ]*
+        ;
+
+        lhs(theNode : node) ::=
+                [
+                        identifier
+                        | literals
+                ]
+                [
+                        index
+                        | indir
+                        | callable
+                ]*
+        ;
+
+        indir ::= '.' identifier
+        ;
+
+        index ::=
+                '[' ']'
+        ;
+
+        callable ::= => local param;
+                '(' lvalue(param) [',' lvalue(param)]* ')'
+        ;
+
+        op ::= #!ignore
+        [
+                '=' !!'='
+                | '!' !!'='
+                | '^' !!'='
+                | '<' !!'<'
+                | '>' !!'>'
+                | '+' !!'='
+                | '-' !!'='
+                | '*' !!['='|'*']
+                | '/' !!'='
+                | '%' !!'='
+                | '&' !!'&'
+                | '|' !!'|'
+                | "**"
+                | "&&"
+                | "||"
+                | ">>" !!'='
+                | "<<" !!'='
+                | "^="
+                | "!="
+                | "+="
+                | "-="
+                | "*="
+                | "/="
+                | "%="
+                | "<<="
+                | ">>="
+        ]
+        ;
+
+        identifier ::= #readIdentifier
+        ;
+
+        literals ::= #readCString | #readCChar | #readNumeric | #readInteger
+        ;
+}, source, input);

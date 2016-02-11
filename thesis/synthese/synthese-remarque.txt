@@ -1,0 +1,33 @@
+
+1) motivation
+
+problematique emergente du reel:
+- calcul floattant
+- traitement pixel (compr  video ) multimedia
+- traitement vertex (3d)
+
+fondue sous forme de chip, hardcoded
+- extension processeur spec
+- objectif changeant: puissance vs consommation
+
+processus :
+
+Domain application -> puce -> logiciel
+
+2) description processus codage
+
+Figure 1.1
+rajouter en avant:
+
+le reel
+l'humain
+
+du reel : emergence un model   reel->humain
+du humain : retranscrit le model en algorithme  humain -> source code (activité de programmation)
+
+rajouter en fin:
+
+automate
+resultat
+
+l'automate: interprete les donnees reel et s'adapte pour donner un resultat

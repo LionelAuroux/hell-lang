@@ -1,0 +1,7 @@
+archi:
+= via : basse consommation (fanless)
+
+= arm: 3 ISA
+ avoir jazelle 80% du bytecode java (code 0 adresse)
+ mode jeux instruction Thumb  16bit 2 adresses
+ mode instruction 32 bit

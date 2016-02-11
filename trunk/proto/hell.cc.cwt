@@ -1,0 +1,45 @@
+#include "llvm/DerivedTypes.h"
+#include "llvm/ValueSymbolTable.h"
+#include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/Interpreter.h"
+#include "llvm/ExecutionEngine/JIT.h"
+#include "llvm/LLVMContext.h"
+#include "llvm/Module.h"
+#include "llvm/PassManager.h"
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/Target/TargetData.h"
+#include "llvm/Target/TargetSelect.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Support/IRBuilder.h"
+
+#include <iostream>
+#include <vector>
+using namespace llvm;
+
+// unite de compilation
+static Module *TheModule;
+
+// instancie un builder sur le context global
+static IRBuilder<> Builder(getGlobalContext());
+
+//hack IO
+#include <unistd.h>
+
+int	main()
+{
+  // instancie ce qu'il faut
+  //InitializeNativeTarget();
+
+  // cree le contexte global
+  LLVMContext &Context = getGlobalContext();
+
+  // Cree un module
+  TheModule = new Module("@this.name@", Context);
+
+  <%local sSrc = compile(this);%>
+@sSrc@
+
+  // affiche le code generer
+  dup2(1, 2);///!!!! hack pour le makefile
+  TheModule->dump();  
+}

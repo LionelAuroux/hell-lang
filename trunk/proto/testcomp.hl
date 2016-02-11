@@ -1,0 +1,15 @@
+@extern	printf:(*i8, ...)
+@extern	malloc:(*i32)i8
+
+main:
+	res:= 10 * 100 * 1000
+	b:i32 = 6
+	a:i32 = 15
+	c:i32 = 7
+	c = a * b / 10 - c
+	x:i32 = 12 * 100 + 42
+	b = b -1
+	a = b * a - x
+	str := "ceci est un test"
+	//printf("test %d %d %d %d %d\n", a, b, c, x, res)
+end

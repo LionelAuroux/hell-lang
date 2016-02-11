@@ -1,0 +1,51 @@
+
+Due to processors evolution, it become more and more difficult to produce efficient code.
+The number of parameter to take into account in the process increases drastically.
+In the past, compilation was a matter of translation from a not such very high level language to a lower level assembly language on simple in-order processor.
+Now architectures and processors mix a lot of difficulties for compilator efficiency. Respectively:  one or many identical processor but also heterogeneous, processors could be out-of-order, pipelined, multi-threaded, multi-cored.
+Parallely, the ISA of processor evolve to take account of needs of modern technology in science field but also for ordinary users (i.e : specialized instructions for multimedia application). 
+Now to build an application that take account all these parameters we use many tools. So, for our specific HPC field but also for more generally computer science concerns, build an application is no more simple.
+
+In response to this evolution, a lot of new compilation technics are found to feed the gap between needs and reality. 
+The most of them are in the back-end of compiler but for some of them, external tools must be used during the compilation chain.
+For example,a naive but efficient way to improve performance for an algorithm is to propose many implementations of the same function 
+for handle different aspect of an architecture.
+Thus we need to select code really efficient for a real target. So we need to collect information at runtime and to use it to adapt the source code thru an ad-hoc tool (aka iterative compilation).
+Other tools try to adapt code at runtime.
+
+It become necessary to review the classical compilation chains and to extend it to take account of these new perspectives.
+
+To illustrate this, we present a case study of tools that implement different technics for differents needs and we try to extract from them common caracteristics, hierarchical relations, general organisation.
+
+
+// include List TOOL & Description
+
+First,  we could notice that all these tools interfer in the compilation chain at different time. 
+We list all these stages and try to find where the tools could do things:
+
+- Specification Time: 
+        Before writing programs in a computer language, we design it. 
+        To do so, we could write algorithms in natural language or use specification languages (textual or graphical). 
+        Many tools work at this level and can translate directly a specification language into a programming language.
+
+- Compile Time:
+        Classical compiler work at this stage. We could identify two sub-level: High level and low level.
+        The main difference between specification language and High level programming language is that a specification language don't takes account of all problematics of a computer. 
+        They are domain specific (aka DSL). High level programming languages that support high programming paradigm (functionnal, parallel, agent) are considered as high level programming language 
+        if they try to be for general purpose programming (aka GPL).
+        Low level programming languages are basically assembler languages.
+
+- Package Time:
+        The concern of package time is to handle all files produce at compile time in a way that you could distribute it. 
+        At this time a lot of things could be done to adapt binary code to the final execution environment. 
+        So we notice two sub-level:
+                Package : When the program, the component or the library is built and packed in an installation package.
+                Deploy or Install : When the installation package are really executed and used to install the program, the component or the library.
+
+- Execution Time:
+        The aim of the compilation chain is to obtain a program in memory, ready to be executed.
+        We notice two sub-step for this process:
+                File : Programs, components and libraries are projected into memory from files. This computing is done by the system with the help of the binary loader and dynamic library loader.
+                Memory : All is loaded, but during execution some job could be done.
+
+ 

@@ -1,0 +1,25 @@
+
+Statique:
+        Connaissance de plus en plus fine des valeur des variables
+        Algo (domain centric):
+                variables et constantes représenté de maniere symbolique : traitement symbolique, logique
+                type de donnée générique : entier, réel, complexes
+                parallelisme naturel des algorithmes : pattern producteur/consommateur, map reduce
+                court-circuit (inlining) : instructions natives optimisé pour algorithme particulier
+        Programmation (compilation centric):
+                constantes et donnees recoltés par experience (humaine|machine):
+                        loop unroll, allocation statique, dead code detection
+                type de donnée programme : représentation machine (NBits) registres et instructions
+                serialisation des algorithmes : boucles, fonctions -> profiling
+        Deploiement/Installation (package centric):
+                processeur (type et nombres) : instructions spec, ILP, SMP
+                periphériques (cartes filles pour le calcul: GPU, ...): instructions hybride
+                memoires (disques, ram): tailles et vitesses -> profiling
+
+Dynamique:
+        compilation dynamique:
+        - granularite petite a grosse : JIT, CodeGen, Dynamique Scheduling
+        - a partir des donnees d'entree ou d'un code : donnee, bytecode, source a interpreter
+        profiling:
+        - temps execution branche dynamique scheduling
+        - frequence ou bornes des donnees a traiter

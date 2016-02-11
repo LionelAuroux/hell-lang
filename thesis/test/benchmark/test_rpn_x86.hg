@@ -1,0 +1,67 @@
+/* -*- C -*- */
+
+#cpu x86
+
+#include <stdio.h>
+#include <stdlib.h>
+
+
+//typedef int (*pifi)(int);
+
+
+pifi rpnCompile(char *expr)
+{
+  insn *code= (insn *)malloc(1024);
+  #[
+	.org	code
+	push	%ebp
+	mov	%esp, %ebp
+	mov	8(%ebp), %eax
+  ]#
+  while (*expr)
+    {
+      char buf[32];
+      int n;
+      // lit un nombre
+      if (sscanf(expr, "%[0-9]%n", buf, &n)) 
+	{
+	  expr+= n - 1;
+	  n = strtol(buf, 0, 0);
+	  // modifie eax
+	  #[
+	    push	%eax
+	    mov	$(n), %eax
+	    ]# 
+	 }
+      // tete de pile dans ecx 
+      else if (*expr == '+') #[
+	pop	%ecx
+	add	%ecx, %eax
+      ]# else if (*expr == '-') #[
+	mov	%eax, %ecx
+	pop	%eax
+	sub	%ecx, %eax
+      ]# else if (*expr == '*') #[
+	pop	%ecx
+	imul	%ecx, %eax
+      ]# else if (*expr == '/') #[
+	mov	%eax, %ecx
+	pop	%eax
+	cltd
+	idiv	%ecx
+      ]# else {
+	fprintf(stderr, "cannot compile: %s\n", expr);
+	abort();
+      }
+      ++expr;
+    }
+  #[
+	leave
+	ret
+  ]#;
+  iflush (code, hpbcg_asm_pc);
+  printf("Code generated\n");
+  return (pifi)code;
+}
+
+

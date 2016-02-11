@@ -1,0 +1,167 @@
+// fonctions de creation de node AST
+#include "nodecmd.inc.cws"
+
+declare function	isType(theNode : node);
+declare function	isFunction(theNode : node);
+declare function	isRange(theNode : node);
+declare function	isObject(theNode : node);
+declare function	isCollection(theNode : node);
+declare function	isPointer(theNode : node);
+declare function	takeBlock(theNode : node);
+
+declare function	astNode_Block(theNode : node, gl_pctx : node = null);
+declare function	astNode_Terminal(theNode : node);
+declare function	astNode_BinOperator(theNode : node, op : value);
+declare function	astNode_CondOperator(theNode : node, op : value);
+declare function	astNode_setDefaultReturn(theNode : node);
+declare function	astNode_setDefaultTypes(theNode : node);
+
+///// BEGIN
+function lookup(theKey : value, theScope: node, out_ref : reference)
+{
+  local leaf;
+  ref leaf = theScope;
+  if (existVariable(leaf.pctx))
+    {
+      local i = 0;
+      while (existVariable(leaf.pctx))
+	{
+	  traceLine("regarde au niveau:" + i);
+	  traceObject(leaf.symbol);
+	  if (existVariable(leaf.symbol) && findElement(theKey, leaf.symbol))
+	    {
+	      out_ref = leaf;
+	      return true;
+	    }
+	  // on remonte d'un cran
+	  ref leaf = leaf.pctx;
+	  i = $i + 1$;
+	}
+    }
+}
+
+function isType(theNode : node)
+{
+  //  if ()
+  //{}
+  traceLine(theNode.id + " n' est pas un type l:" + countInputLines());
+  return false;
+}
+
+function isFunction(theNode : node)
+{
+  traceLine("---->");
+  traceObject(theNode);
+  traceObject(this.gl_pctx);
+  local theRef;
+  if (lookup(theNode.id, this.gl_pctx, theRef) && theRef.isFunction == "yes")
+    {
+      traceLine(theNode.id + " est une fonction l:" + countInputLines());
+      return true;
+    }
+  traceLine(theNode.id + " n' est pas une fonction l:" + countInputLines());
+  return false;
+}
+
+function isRange(theNode : node)
+{
+  traceLine(theNode.id + " n' est pas un range l:" + countInputLines());
+  return false;
+}
+
+function isObject(theNode : node)
+{
+  traceLine(theNode.id + " n' est pas un objet l:" + countInputLines());
+  return false;
+}
+
+function isCollection(theNode : node)
+{
+  traceLine(theNode.id + " n'est pas une collection l:" + countInputLines());
+  return false;
+}
+
+function isPointer(theNode : node)
+{
+  traceLine(theNode.id + " n'est pas un pointer l:" + countInputLines());
+  return false;
+}
+
+function takeBlock(theNode : node)
+{
+  traceLine(theNode.id + " ne prends pas de block l:" + countInputLines());
+  return false;
+}
+///// END
+
+
+function	astNode_Block(theNode : node, gl_pctx : node = null)
+{
+  nodeCmd_Item(theNode);
+  theNode.type_node = "block";
+  insert theNode.block;
+  insert theNode.block.pctx;
+  if (existVariable(gl_pctx.type_node))
+    {	ref theNode.block.pctx = gl_pctx;}
+  // DBG
+  insert	theNode._line = countInputLines();
+  insert	theNode._col = countInputCols();
+}
+
+function	astNode_Terminal(theNode : node)
+{
+  nodeCmd_Item(theNode);
+  theNode.type_node = "terminal";
+  // DBG
+  insert	theNode._line = countInputLines();
+  insert	theNode._col = countInputCols();
+}
+
+function	astNode_BinOperator(theNode : node, op : value)
+{
+  slideNodeContent(theNode, left);
+  nodeCmd_Item(theNode);
+  theNode.type_node = "binop";
+  insert	theNode.op = op;
+  insert	theNode.right;
+  // DBG
+  insert	theNode._line = countInputLines();
+  insert	theNode._col = countInputCols();
+}
+
+function	astNode_CondOperator(theNode : node, op : value)
+{
+  slideNodeContent(theNode, condition);
+  nodeCmd_Item(theNode);
+  theNode.type_node = "condop";
+  insert	theNode.op = op;
+  insert	theNode.then;
+  insert	theNode.else;
+  // DBG
+  insert	theNode._line = countInputLines();
+  insert	theNode._col = countInputCols();
+}
+
+function	astNode_setDefaultReturn(theNode : node)
+{
+  // type de retour par defaut void
+  if (!existVariable(theNode.type_hell))
+    {
+      insert theNode.mode = ":";
+      insert theNode.type_hell = "void";
+    }
+}
+
+function	astNode_setDefaultTypes(theNode : node)
+{
+  insert theNode.symbol["i8"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["ui8"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["i16"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["ui16"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["i32"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["ui32"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["i64"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["ui64"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["f32"] = {.type_node="builtin", .isType = "yes"};
+  insert theNode.symbol["f64"] = {.type_node="builtin", .isType = "yes"};
+}
