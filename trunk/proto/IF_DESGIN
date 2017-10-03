@@ -1,0 +1,10 @@
+fun test():
+    if x > 5:
+        kikoo()
+    \else:
+        pouet += 1
+    match x
+    \ 1:
+    \ 2 (toto, a) :
+    \ 3:
+    \ _:
